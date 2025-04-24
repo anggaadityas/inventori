@@ -17,6 +17,7 @@
         <a class="nav-link" href="tps.php"><b>Permintaan Transfer Putus Toko</b></a>
         <a class="nav-link" href="tbs.php"><b>Permintaan Transfer Balik Toko</b></a>
          <a class="nav-link" href="retur.php"><b>Permintaan Retur Barang Toko</b></a>
+         <a class="nav-link" href="assets.php"><b>Permintaan Asset</b></a>
           <!-- <a class="nav-link" href="uploadorder.php"><b>Upload Pemesanan Toko</b></a> -->
         </div>
       </li>
@@ -40,6 +41,9 @@
       </li>
       <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
         <a class="nav-link" href="listreturn.php"><b>Daftar Retur Barang </b></a>
+      </li>
+      <li class="nav-item  <?php if($halaman == "listrequestassets") echo "active"; ?>">
+        <a class="nav-link" href="listrequestassets.php"><b>Daftar Asset Barang </b></a>
       </li>
       <li class="nav-item dropdown <?php if($halaman == "report") echo "active"; ?>">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -69,6 +73,9 @@
       ?>
       <li class="nav-item  <?php if($halaman == "listrequest") echo "active"; ?>">
         <a class="nav-link" href="listrequest.php"><b>Daftar Permintaan Barang </b></a>
+      </li>
+      <li class="nav-item  <?php if($halaman == "listrequestassets") echo "active"; ?>">
+        <a class="nav-link" href="listrequestassets.php"><b>Daftar Asset Barang </b></a>
       </li>
       <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
         <a class="nav-link" href="listreturn.php"><b>Daftar Retur Barang </b></a>
@@ -107,6 +114,9 @@
       <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
         <a class="nav-link" href="listreturn.php"><b>Daftar Retur Barang </b></a>
       </li>
+      <li class="nav-item  <?php if($halaman == "listrequestassets") echo "active"; ?>">
+        <a class="nav-link" href="listrequestassets.php"><b>Daftar Asset Barang </b></a>
+      </li>
      <li class="nav-item  <?php if($halaman == "masteritem") echo "active"; ?>">
         <a class="nav-link" href="masteritem.php"><b>Master Barang</b></a>
       </li>
@@ -131,12 +141,33 @@
         </div>
       </li>
       <?php
-      }else if($_SESSION["role_id"] == '13'){
+      }else if($_SESSION["role_id"] == '14' || $_SESSION["role_id"] == '15' || $_SESSION["role_id"] == '16' ){
       ?>
 
 
+<li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
+        <a class="nav-link" href="listrequestassets.php"><b>Daftar Assets Barang </b></a>
+      </li>
+      <li class="nav-item  <?php if($halaman == "resetsandi") echo "active"; ?>">
+        <a class="nav-link" href="changepassword.php"><b>Reset Sandi </b></a>
+      </li>
+      <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <b><?php echo  $_SESSION["nama"]; ?></b>
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+          <a class="dropdown-item" href="logout.php">Keluar</a>
+        </div>
+      </li>
+      <?php
+      }else if($_SESSION["role_id"] == '13'){
+      ?>
+
+      <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
+        <a class="nav-link" href="listrequestassets.php"><b>Daftar Assets Barang </b></a>
+      </li>
       <li class="nav-item  <?php if($halaman == "listapprovereturn") echo "active"; ?>">
-        <a class="nav-link" href="listapprovereturn.php"><b>Daftar Penyetujui Retur Barang </b></a>
+        <a class="nav-link" href="listapprovereturn.php"><b>Daftar Retur Barang </b></a>
       </li>
       <li class="nav-item dropdown <?php if($halaman == "report") echo "active"; ?>">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

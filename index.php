@@ -55,7 +55,10 @@ $user =mysqli_fetch_array($stmt);
                 }else if($user['role_id'] =="5" ){    
                 $halaman='listreturn';          
                 header("Location: listreturn.php");
-                }else if($user['nama'] =="Audit" || $user['nama'] =="Head FA" || $user['nama'] =="RM" ){    
+                }else if($user['role_id'] =="14"  || $user['role_id'] =="15" || $user['role_id'] =="16"){    
+                  $halaman='listrequestassets';          
+                  header("Location: listrequestassets.php");
+                  }else if($user['nama'] =="Audit" || $user['nama'] =="Head FA" || $user['nama'] =="RM" ){    
                 $halaman='laporan';          
                 header("Location: reporttps.php");
                 }else if($user['role_id'] =="999" ){    
