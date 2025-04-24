@@ -148,7 +148,7 @@ li {list-style-type:none;}
                     </thead>
     <tbody>';
 
-        $sqldetail = "SELECT * FROM InventoriAssetDetail where TransID='$id' and WarehouseTo = '$warehouse'";
+        $sqldetail = "SELECT * FROM InventoriAssetDetail where TransID='$id' and StatusApprovalAM=1 and WarehouseTo = '$warehouse'";
         $stmtdetail = sqlsrv_query($conn, $sqldetail);
         if ($stmtdetail === false) {
             die(print_r(sqlsrv_errors(), true));

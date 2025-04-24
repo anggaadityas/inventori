@@ -42,8 +42,8 @@
       <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
         <a class="nav-link" href="listreturn.php"><b>Daftar Retur Barang </b></a>
       </li>
-      <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
-        <a class="nav-link" href="listrequestassets.php"><b>Daftar Assets Barang </b></a>
+      <li class="nav-item  <?php if($halaman == "listrequestassets") echo "active"; ?>">
+        <a class="nav-link" href="listrequestassets.php"><b>Daftar Asset Barang </b></a>
       </li>
       <li class="nav-item dropdown <?php if($halaman == "report") echo "active"; ?>">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -74,8 +74,8 @@
       <li class="nav-item  <?php if($halaman == "listrequest") echo "active"; ?>">
         <a class="nav-link" href="listrequest.php"><b>Daftar Permintaan Barang </b></a>
       </li>
-      <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
-        <a class="nav-link" href="listrequestassets.php"><b>Daftar Assets Barang </b></a>
+      <li class="nav-item  <?php if($halaman == "listrequestassets") echo "active"; ?>">
+        <a class="nav-link" href="listrequestassets.php"><b>Daftar Asset Barang </b></a>
       </li>
       <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
         <a class="nav-link" href="listreturn.php"><b>Daftar Retur Barang </b></a>
@@ -114,6 +114,9 @@
       <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
         <a class="nav-link" href="listreturn.php"><b>Daftar Retur Barang </b></a>
       </li>
+      <li class="nav-item  <?php if($halaman == "listrequestassets") echo "active"; ?>">
+        <a class="nav-link" href="listrequestassets.php"><b>Daftar Asset Barang </b></a>
+      </li>
      <li class="nav-item  <?php if($halaman == "masteritem") echo "active"; ?>">
         <a class="nav-link" href="masteritem.php"><b>Master Barang</b></a>
       </li>
@@ -138,7 +141,7 @@
         </div>
       </li>
       <?php
-      }else if($_SESSION["role_id"] == '14' || $_SESSION["role_id"] == '15' ){
+      }else if($_SESSION["role_id"] == '14' || $_SESSION["role_id"] == '15' || $_SESSION["role_id"] == '16' ){
       ?>
 
 

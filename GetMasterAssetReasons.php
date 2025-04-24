@@ -6,7 +6,7 @@ $response = [];
 
 try {
     $jenis_asset = isset($_GET['jenis_asset']) ? $_GET['jenis_asset'] : '';
-    $query = "SELECT Id, AssetReason FROM MasterAssetReasons WHERE DocTrans = ?";
+    $query = "SELECT Id, AssetReason,AssetKondisi FROM MasterAssetReasons WHERE DocTrans = ?";
     $params = [$jenis_asset];
     $stmt = sqlsrv_query($conn, $query, $params);
 
@@ -18,7 +18,8 @@ try {
     while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
         $items[] = [
             "id" => $row['AssetReason'],
-            "text" => $row['AssetReason']
+            "text" => $row['AssetReason'],
+            'kondisi' => isset($row['AssetKondisi']) ? trim($row['AssetKondisi']) : ''
         ];
     }
 

@@ -19,7 +19,7 @@ if ($requestData['searchByJenisSistem'] == '') {
 if ($requestData['searchByStore'] == '') {
 	$store = " ";
 } else {
-	$store = "AND StoreCode = '" . $requestData['searchByStore'] . "'";
+	$store = "AND WarehouseFrom = '" . $requestData['searchByStore'] . "'";
 }
 
 if ($requestData['searchByStartdate'] == '' or $requestData['searchByEnddate'] == '') {
@@ -35,15 +35,15 @@ if ($requestData['searchByStatusDokumen'] == '') {
 }
 
 
-if ($area_div == 'AM' OR $area_div == 'PROJECT' OR $area_div == 'CK JAKARTA' or $area_div == 'CK SURABAYA' OR $area_div == 'IT JAKARTA' or $area_div == 'IT SURABAYA' or $area_div == 'GA JAKARTA' or $area_div == 'GA SURABAYA' or $area_div == 'ENG JAKARTA' or $area_div == 'ENG SURABAYA') {
-	$where = "WHERE (StoreCode is not null or StoreCode='')";
-	$filter = "WHERE  (StoreCode is not null or StoreCode='') AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
-	$filter1 = "WHERE  (StoreCode is not null or StoreCode='') AND " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
+if ($area_div == 'AM' or $area_div == 'PROJECT' or $area_div == 'CK JAKARTA' or $area_div == 'CK SURABAYA' or $area_div == 'IT JAKARTA' or $area_div == 'IT SURABAYA' or $area_div == 'GA JAKARTA' or $area_div == 'GA SURABAYA' or $area_div == 'ENG JAKARTA' or $area_div == 'ENG SURABAYA' or $area_div == 'IAC') {
+	$where = "WHERE (WarehouseFrom is not null or WarehouseFrom='')";
+	$filter = "WHERE  (WarehouseFrom is not null or WarehouseFrom='') AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
+	$filter1 = "WHERE  (WarehouseFrom is not null or WarehouseFrom='') AND " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
 	$orderby = "ORDER BY a.ID desc";
 } else {
-	$where = "WHERE StoreCode='" . $store1 . "'";
-	$filter = "WHERE StoreCode='" . $store1 . "' AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
-	$filter1 = "WHERE  StoreCode='" . $store1 . "' " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
+	$where = "WHERE WarehouseFrom='" . $store1 . "'";
+	$filter = "WHERE WarehouseFrom='" . $store1 . "' AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
+	$filter1 = "WHERE  WarehouseFrom='" . $store1 . "' " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
 	$orderby = "ORDER BY a.ID desc";
 }
 
@@ -51,14 +51,15 @@ $columns = array(
 	0 => 'ID',
 	1 => 'DocNum',
 	2 => 'DocDate',
-	3 => 'StoreCode',
-	4 => 'TransName',
-	5 => 'TermsAsset',
-	6 => 'DocPriority',
-	7 => 'Remarks',
-	8 => 'ApprovalStatus',
-	9 => 'DocStatus',
-	10 => 'Action'
+	3 => 'WarehouseFrom',
+	4 => 'WarehouseTo',
+	5 => 'TransName',
+	6 => 'TermsAsset',
+	7 => 'DocPriority',
+	8 => 'Remarks',
+	9 => 'ApprovalStatus',
+	10 => 'DocStatus',
+	11 => 'Action'
 );
 
 $sql = "SELECT * 
@@ -68,7 +69,8 @@ FROM
 		a.ID,
         a.DocNum,
 		convert(char(10),a.DocDate,126) DocDate,
-        a.StoreCode,
+        a.WarehouseFrom,
+		a.WarehouseTo,
         b.TransName,
         a.TermsAsset,
         CASE
@@ -82,6 +84,7 @@ FROM
         a.ApprovalProgress,
 		a.ApprovalStatus,
 		a.StatusDoc,
+		a.RemarksIAC,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
       FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID
 			" . $where . "
@@ -100,7 +103,8 @@ FROM
 		a.ID,
         a.DocNum,
 		convert(char(10),a.DocDate,126) DocDate,
-        a.StoreCode,
+        a.WarehouseFrom,
+		a.WarehouseTo,
         b.TransName,
         a.TermsAsset,
           CASE
@@ -114,6 +118,7 @@ FROM
         a.ApprovalProgress,
 		a.ApprovalStatus,
 		a.StatusDoc,
+		a.RemarksIAC,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
       FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
 	$sql .= " " . $filter . "";
@@ -136,7 +141,8 @@ FROM
 		a.ID,
         a.DocNum,
 		convert(char(10),a.DocDate,126) DocDate,
-        a.StoreCode,
+        a.WarehouseFrom,
+		a.WarehouseTo,
         b.TransName,
         a.TermsAsset,
          CASE
@@ -150,6 +156,7 @@ FROM
         a.ApprovalProgress,
 		a.ApprovalStatus,
 		a.StatusDoc,
+		a.RemarksIAC,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
       FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
 	$sql .= " " . $filter1 . "";
@@ -172,7 +179,8 @@ FROM
 		a.ID,
         a.DocNum,
 		convert(char(10),a.DocDate,126) DocDate,
-        a.StoreCode,
+        a.WarehouseFrom,
+		a.WarehouseTo,
         b.TransName,
         a.TermsAsset,
          CASE
@@ -186,6 +194,7 @@ FROM
         a.ApprovalProgress,
 		a.ApprovalStatus,
 		a.StatusDoc,
+		a.RemarksIAC,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
       FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID
 			 " . $where . "
@@ -201,28 +210,53 @@ $data = array();
 while ($row = sqlsrv_fetch_array($query)) {
 	$nestedData = array();
 
-	if($row["ApprovalUser"]==$_SESSION["uid"]){
-		if($row["StatusDoc"]=='Open'){
-			$approval ='
-		<a title="Verfikasi Dokumen" class="badge badge-danger" href="viewapprovalassets.php?id=' . $row["ID"] . '"><b>Approval</b></a>
-		<br>';
-		}else{
-			$approval='';
+	if ($row["ApprovalUser"] == $_SESSION["uid"]) {
+		if ($row["StatusDoc"] == 'Open') {
+			$status = $row["ApprovalStatus"] . ' (' . $row["ApprovalUserName"] . ') ' . ' - ' . $row["StatusDoc"];
+			$approval = '<a title="Verfikasi Dokumen" class="badge badge-danger" href="viewapprovalassets.php?id=' . $row["ID"] . '"><b>Approval</b></a>
+								<br>';
+		} else {
+			$status = '';
+			$approval = '';
 		}
-		$action=' '.$approval.'
-		<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
-	}else{
-		$action = '<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
+		$action = ' ' . $approval . '
+						<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
+	} else {
+		if ($row["StatusDoc"] == 'Selesai') {
+			$status = 'Menuggu Proses Approval IAC';
+			if ($store1 == 'IAC') {
+				if ($row['RemarksIAC'] == '') {
+					$status = 'Menuggu Proses Approval IAC';
+				} else {
+					$status = 'Selesai';
+				}
+				$action = '<a title="Verifikasi Dokumen" class="badge badge-danger open-modal" data-id="' . $row["ID"] . '" data-code="' . $row["DocNum"] . '" data-remarks="' . $row["RemarksIAC"] . '"><b>Input Remaks</b></a>
+								<br>
+								<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
+			} else {
+				if ($row['RemarksIAC'] == '') {
+					$status = 'Menuggu Proses Approval IAC';
+				} else {
+					$status = 'Selesai';
+				}
+				$action = '<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
+			}
+		} else {
+			$status = $row["ApprovalStatus"] . ' (' . $row["ApprovalUserName"] . ') ' . ' - ' . $row["StatusDoc"];
+			$action = '<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
+		}
 	}
 
 	$nestedData[] = '<a href="#" class="code"><b>' . $row["DocNum"] . '</b></a>';
 	$nestedData[] = $row["DocDate"];
-	$nestedData[] = $row["StoreCode"];
+	$nestedData[] = $row["WarehouseFrom"];
+	$nestedData[] = $row["WarehouseTo"];
 	$nestedData[] = $row["TransName"];
 	$nestedData[] = $row["TermsAsset"];
 	$nestedData[] = $row["DocPriority"];
 	$nestedData[] = $row["Remarks"];
-	$nestedData[] = $row["ApprovalStatus"].' ('.$row["ApprovalUserName"].') '.' - ' . $row["StatusDoc"];
+	$nestedData[] = $row["RemarksIAC"];
+	$nestedData[] = $status;
 	$nestedData[] = $action;
 	$data[] = $nestedData;
 

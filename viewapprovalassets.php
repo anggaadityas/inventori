@@ -194,10 +194,10 @@ include "layouts/navbar.php";
                                     if ($rowheader['ApprovalStatus'] == 'Menunggu Verifikasi Warehouse') {
                                         ?>
                                         <td>
-                                            <input type="text" class="form-control"
+                                            <input type="number" class="form-control"
                                                 id="QuantityVer_<?php echo $item['ItemCode']; ?>"
                                                 name="QuantityVer[<?php echo $item['ItemCode']; ?>]"
-                                                data-qty-permintaan="<?php echo $item['Quantity']; ?>" maxlength="110"
+                                                data-qty-permintaan="<?php echo $item['Quantity']; ?>" min="0" max="<?php echo $item['Quantity']; ?>"
                                                 value="<?php echo $item['Quantity']; ?>">
                                         </td>
                                         <?php
@@ -367,13 +367,13 @@ include "layouts/navbar.php";
                     var qtyVerifikasiInput = $(`#QuantityVer_${itemCode}`);
                     var qtyVerifikasi = parseFloat(qtyVerifikasiInput.val() || 0);
 
-                    if (qtyVerifikasi < qtyPermintaan) {
+                    if (qtyVerifikasi > qtyPermintaan) {
                         qtyVerifikasiInput.css('border', '2px solid red');
 
                         Swal.fire({
                             icon: 'error',
                             title: 'Qty Verifikasi Tidak Valid',
-                            text: `Qty Verifikasi untuk item ${itemCode} tidak boleh kurang dari qty permintaan (${qtyPermintaan}).`
+                            text: `Qty Verifikasi untuk item ${itemCode} tidak boleh lebih  dari qty permintaan (${qtyPermintaan}).`
                         });
 
                         qtyVerifikasiInput.focus();

@@ -1,5 +1,5 @@
 <?php
-$halaman = "listreturn";
+$halaman = "listrequestassets";
 include "layouts/header.php";
 include "layouts/navbar.php";
 ?>
@@ -100,17 +100,6 @@ include "layouts/navbar.php";
 
             </div>
 
-
-            <?php
-            if ($_SESSION["area_div"] == 'STORE') {
-                ?>
-                <br>
-                <a href="revisiitem.php" class="btn btn-warning"><b>Revisi Retur Barang</b></a>
-                <br>
-                <?php
-            }
-            ?>
-
             <br>
 
             <table id="datatable" class="table table-striped table-bordered nowrap" style="width: 100%;">
@@ -118,11 +107,13 @@ include "layouts/navbar.php";
                     <tr>
                         <th style="width:10px;">Nomor Dokumen</th>
                         <th>Tanggal Pengiriman</th>
-                        <th>Toko</th>
+                        <th>WarehouseFrom</th>
+                        <th>WarehouseTo</th>
                         <th>Jenis Permintaan</th>
                         <th>Jenis Sistem</th>
                         <th>Jenis Prioritas</th>
                         <th>Keterangan Permintaan</th>
+                        <th>Keterangan IAC</th>
                         <th>Status</th>
                         <th>Detail Permintaan</th>
                     </tr>
@@ -132,41 +123,31 @@ include "layouts/navbar.php";
 
         </div>
 
-        <div class="modal fade" id="addBookDialog" tabindex="-1" role="dialog" aria-labelledby="my_modalLabel">
+        <!-- Modal -->
+
+        <div class="modal fade" id="approvalModal" tabindex="-1" role="dialog" aria-labelledby="my_modalLabel">
             <div class="modal-dialog" role="dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h4 class="modal-title" id="myModalLabel">No Dokumen</h4>
+                        <h5 class="modal-title">Input Remarks <span id="code"></span></h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-
-
                     <div class="modal-body">
-                        <div class="form-group row" style="margin-top: 10px;">
-                            <label for="inputEmail3" class="col-sm-3 col-form-label"> No Dokumen SAP</label>
-                            <div class="col-sm-6">
-                                <input type="hidden" class="form-control" name="bookId" id="bookId" />
-                                <input type="text" class="form-control" name="kodesap" id="kodesap"
-                                    placeholder="Input Kode SAP" autocomplete="off" />
-                            </div>
-                        </div>
-                        <div class="form-group row" style="margin-top: 10px;">
-                            <label for="inputEmail3" class="col-sm-3 col-form-label"> Tanggal Posting Dokumen
-                                SAP</label>
-                            <div class="col-sm-6">
-                                <input type="text" class="form-control" placeholder="Tanggal Posting Dokumen SAP"
-                                    name="date_posting" id="date_posting" autocomplete="off" readonly />
-                            </div>
-                        </div>
+                        <input type="hidden" id="approval_id">
+                        <textarea id="approval_remarks" class="form-control" rows="3"
+                            placeholder="Tulis remarks..."></textarea>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-default" data-dismiss="modal">No</button>
-                        <button type="button" class="btn btn-primary addkodesap">Yes</button>
+                        <button type="button" class="btn btn-danger" data-dismiss="modal">No</button>
+                        <button type="button" class="btn btn-primary" id="submitApproval">Yes</button>
                     </div>
 
                 </div>
             </div>
 
         </div>
+
+
 
         <script src="js/jquery.min.js"></script>
         <script src="js/bootstrap.min.js"></script>
@@ -182,6 +163,43 @@ include "layouts/navbar.php";
         <script>
             //Datatables Basic server side initilization
             $(document).ready(function () {
+
+
+                $(document).on('click', '.open-modal', function () {
+                    var id = $(this).data('id');
+                    var code = $(this).data('code');
+                    var remarks = $(this).data('remarks');
+                    $('#approval_id').val(id);
+                    $('#code').text(code);
+                    $('#approval_remarks').val(remarks);
+                    $('#approvalModal').modal('show');
+                });
+
+                // Submit
+                $('#submitApproval').click(function () {
+                    var id = $('#approval_id').val();
+                    var remarks = $('#approval_remarks').val();
+
+                    if (remarks.trim() === '') {
+                        Swal.fire('Warning', 'Remarks tidak boleh kosong!', 'warning');
+                        return;
+                    }
+
+                    $.ajax({
+                        url: 'updateInputRemarks.php',
+                        type: 'POST',
+                        data: { id: id, remarks: remarks },
+                        success: function (response) {
+                            $('#approvalModal').modal('hide');
+                            Swal.fire('Sukses', 'Approval remarks berhasil disimpan!', 'success')
+                                .then(() => location.reload());
+                        },
+                        error: function () {
+                            Swal.fire('Error', 'Terjadi kesalahan saat mengirim data!', 'error');
+                        }
+                    });
+                });
+
                 var dataTable = $('#datatable').DataTable({
                     "processing": true,
                     "serverSide": true,

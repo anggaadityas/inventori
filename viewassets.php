@@ -39,6 +39,7 @@ include "layouts/navbar.php";
             <br><br><br>
 
             <form method="POST" action="approvereturnassetsproses.php" id="sender_container">
+
                 <fieldset>
                     <div class="form-group row">
                         <label for="inputEmail" class="col-sm-2 col-form-label">Tanggal Permintaan</label>
@@ -87,10 +88,17 @@ include "layouts/navbar.php";
                         </div>
                     </div>
                     <div class="form-group row">
-                        <label for="inputPassword" class="col-sm-2 col-form-label">Toko</label>
+                        <label for="inputPassword" class="col-sm-2 col-form-label">WarehouseFrom</label>
                         <div class="col-sm-2">
-                            <input type="text" class="form-control" id="inputEmail" name="StoreCode"
-                                value="<?php echo $rowheader['StoreCode']; ?>" readonly>
+                            <input type="text" class="form-control" id="inputEmail" name="WarehouseFrom"
+                                value="<?php echo $rowheader['WarehouseFrom']; ?>" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="inputPassword" class="col-sm-2 col-form-label">WarehouseTo</label>
+                        <div class="col-sm-2">
+                            <input type="text" class="form-control" id="inputEmail" name="WarehouseTo"
+                                value="<?php echo $rowheader['WarehouseTo']; ?>" readonly>
                         </div>
                     </div>
                     <div class="form-group row">
@@ -111,13 +119,45 @@ include "layouts/navbar.php";
                 </fieldset>
 
                 <br>
+                <h6>Table Progress Approval</h6>
 
-                
+                <?php
+                $sql = "SELECT * FROM InventoriApprovalAsset WHERE TransID = ?";
+                $params = array($id); // Ganti sesuai kebutuhan (misal: ID dari URL)
+                $stmt = sqlsrv_query($conn, $sql, $params);
+
+                // Tampilkan ke HTML table
+                echo '<table border="1" cellpadding="5" cellspacing="0">';
+                echo '<tr>
+        <th>ApprovalStep</th>
+        <th>UserNameApproval</th>
+        <th>StatusApproval</th>
+        <th>ApprovalStatus</th>
+        <th>ApprovalDate</th>
+        <th>ApprovalRemarks</th>
+      </tr>';
+
+                while ($row = sqlsrv_fetch_array($stmt, SQLSRV_FETCH_ASSOC)) {
+                    echo '<tr>';
+                    echo '<td>' . $row['ApprovalStep'] . '</td>';
+                    echo '<td>' . $row['UserNameApproval'] . '</td>';
+                    echo '<td>' . $row['StatusApproval'] . '</td>';
+                    echo '<td>' . $row['ApprovalStatus'] . '</td>';
+                    echo '<td>' . ($row['ApprovalDate'] ? $row['ApprovalDate']->format('Y-m-d H:i:s') : '') . '</td>';
+                    echo '<td>' . $row['ApprovalRemarks'] . '</td>';
+                    echo '</tr>';
+                }
+
+                echo '</table>';
+
+                ?>
+
+                <br>
 
                 <p><b>Cetak Surat Jalan : </b></p>
                 <?php
-                $sqlcat = "SELECT ID,WarehouseTo FROM InventoriAssetDetail WHERE TransID='$id' AND StatusApprovalAM=1
-                    GROUP BY ID,WarehouseTo
+                $sqlcat = "SELECT DISTINCT WarehouseTo FROM InventoriAssetDetail WHERE TransID='$id' AND StatusApprovalAM=1
+                    GROUP BY WarehouseTo
                 ";
                 $stmtcat = sqlsrv_query($conn, $sqlcat);
                 if ($stmtcat === false) {
@@ -137,21 +177,21 @@ include "layouts/navbar.php";
                 }
                 ?>
 
-                <br>
+                    <br>
 
-                <?php
-                $sqldetail = "SELECT * FROM InventoriAssetDetail WHERE TransID='$id'";
-                $stmtdetail = sqlsrv_query($conn, $sqldetail);
-                if ($stmtdetail === false) {
-                    die(print_r(sqlsrv_errors(), true));
-                }
+                    <?php
+                    $sqldetail = "SELECT * FROM InventoriAssetDetail WHERE TransID='$id'";
+                    $stmtdetail = sqlsrv_query($conn, $sqldetail);
+                    if ($stmtdetail === false) {
+                        die(print_r(sqlsrv_errors(), true));
+                    }
 
-                $cats = array();
-                while ($row = sqlsrv_fetch_array($stmtdetail, SQLSRV_FETCH_ASSOC)) {
-                    $prefix = substr($row['ItemCode'], 0, 3); // Ambil 3 karakter pertama dari ItemCode
-                    $cats[$prefix][] = $row;
-                }
-                ?>
+                    $cats = array();
+                    while ($row = sqlsrv_fetch_array($stmtdetail, SQLSRV_FETCH_ASSOC)) {
+                        $prefix = substr($row['ItemCode'], 0, 3); // Ambil 3 karakter pertama dari ItemCode
+                        $cats[$prefix][] = $row;
+                    }
+                    ?>
 
                 <div style="overflow-x:auto;">
 

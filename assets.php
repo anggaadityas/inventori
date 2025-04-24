@@ -8,20 +8,16 @@ include "layouts/navbar.php";
     #itemTable select,
     #itemTable textarea {
         width: 100%;
-        /* Membuat input memenuhi sel */
         box-sizing: border-box;
-        /* Agar padding tidak menambah ukuran */
     }
 
     #itemTable th,
     #itemTable td {
         vertical-align: middle;
-        /* Pusatkan teks secara vertikal */
     }
 
     #itemTable .form-control {
         padding: 5px;
-        /* Sesuaikan padding agar tidak terlalu besar */
     }
 </style>
 <div class="container1">
@@ -34,14 +30,13 @@ include "layouts/navbar.php";
             // menampilkan pesan jika ada pesan
             if (isset($_SESSION['pesan']) && $_SESSION['pesan'] <> '') {
                 echo '<div class="alert alert-warning alert-dismissible fade show col-sm-5" role="alert">
-  <strong>Info!</strong> ' . $_SESSION['pesan'] . '
-  <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-    <span aria-hidden="true">&times;</span>
-  </button>
-</div>';
+                        <strong>Info!</strong> ' . $_SESSION['pesan'] . '
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                        </div>';
             }
 
-            // mengatur session pesan menjadi kosong
             $_SESSION['pesan'] = '';
 
             ?>
@@ -68,8 +63,55 @@ include "layouts/navbar.php";
                                     <select name="jenis_permintaan" id="jenis_permintaan" class="form-control" required>
                                         <option value="">-- Pilih Jenis Asset --</option>
                                         <!-- <option value="1">Warehouse To Store</option> -->
-                                        <!-- <option value="2">Store To Store</option> -->
+                                        <option value="2">Store To Store</option>
                                         <option value="3">Store To Warehouse</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group row store" style="display: none;">
+                                <label for="inputPassword" class="col-sm-2 col-form-label">Toko Penerima</label>
+                                <div class="col-sm-2">
+                                    <select name="WarehouseTo" id="store" class="form-control" required>
+                                        <option value="">-- Pilih Toko --</option>
+                                        <?php
+                                        $store = $_SESSION["nama"];
+                                        $area_ck = $_SESSION["area_ck"];
+
+                                        $serverNameHO = "192.168.1.5";
+                                        // $serverNameHO = "portal.multirasa.co.id";
+                                        $connectionInfoHO = array("Database" => "role", "UID" => "sa", "PWD" => "Mrn.14");
+                                        $connHO = sqlsrv_connect($serverNameHO, $connectionInfoHO);
+                                        if ($connHO === false) {
+                                            die(print_r(sqlsrv_errors(), true));
+                                        }
+
+                                        if ($store == 'T01') {
+                                            $area = "";
+                                        } else {
+                                            $area = "and (area ='$area_ck' OR area=3)";
+                                        }
+
+                                        $sqlstore = "SELECT upper(storeCode) store FROM storesett where  storeCode not in ('$store') order by storeCode asc";
+                                        $stmtstore = sqlsrv_query($connHO, $sqlstore);
+                                        if ($stmtstore === false) {
+                                            die(print_r(sqlsrv_errors(), true));
+                                        }
+
+                                        while ($rowstore = sqlsrv_fetch_array($stmtstore, SQLSRV_FETCH_ASSOC)) {
+                                            echo "<option value=" . $rowstore['store'] . "> " . $rowstore['store'] . "</option>";
+                                        }
+
+                                        ?>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group row">
+                                <label for="inputPassword" class="col-sm-2 col-form-label">Terms</label>
+                                <div class="col-sm-3">
+                                    <select name="terms" id="terms" class="form-control" required>
+                                        <option value="">-- Pilih Terms --</option>
                                     </select>
                                 </div>
                             </div>
@@ -128,8 +170,8 @@ include "layouts/navbar.php";
                                     <th style="width: 8%;">Satuan</th>
                                     <th style="width: 10%;">Stok Asset</th>
                                     <th style="width: 8%;">Jumlah</th>
-                                    <th style="width: 12%;">Kondisi Asset</th>
                                     <th style="width: 10%;">Alasan</th>
+                                    <th style="width: 12%;">Kondisi Asset</th>
                                     <th style="width: 15%;">Keterangan Asset</th>
                                     <th style="width: 10%;">Action</th>
                                 </tr>
@@ -173,7 +215,7 @@ include "layouts/navbar.php";
                         <table id="itemDataTable" class="display" style="width:100%">
                             <thead>
                                 <tr>
-                                    <th>Select</th>
+                                    <th><input type="checkbox" id="select-all-items"> Select All</th>
                                     <th>Warerhouse</th>
                                     <th>Item Code</th>
                                     <th>Item Name</th>
@@ -212,6 +254,45 @@ include "layouts/navbar.php";
         <script>
 
             $(document).ready(function () {
+                $(".store").hide();
+                $('#jenis_permintaan').on('change', function () {
+                    var jenisPermintaan = $(this).val();
+
+                    if (jenisPermintaan == '2') {
+                        $(".store").show();
+                        $('#store').prop('required', true);
+                    } else {
+                        $(".store").hide();
+                        $('#store').prop('required', false);
+                    }
+                });
+            });
+
+
+            $(document).ready(function () {
+                $('#jenis_permintaan').on('change', function () {
+                    let selected = $(this).val();
+                    let termsOptions = '';
+
+                    if (selected === '1') {
+                        // Warehouse To Store
+                        termsOptions += '<option value="Asset Transfer">Asset Transfer</option>';
+                    } else if (selected === '2') {
+                        // Store To Store
+                        termsOptions += '<option value="Transfer Antar Store">Transfer Antar Store</option>';
+                    } else if (selected === '3') {
+                        // Store To Warehouse
+                        termsOptions += '<option value="Retur">Retur</option>';
+                        termsOptions += '<option value="Store Closing">Store Closing</option>';
+                    }
+
+                    // Reset terms select
+                    $('#terms').html('<option value="">-- Pilih Terms --</option>' + termsOptions);
+                });
+            });
+
+
+            $(document).ready(function () {
 
                 $("#jenis_prioritas").on('change', function () {
                     var prioritas = $("#jenis_prioritas :selected").val();
@@ -238,13 +319,16 @@ include "layouts/navbar.php";
                     }
                 });
 
+
                 let selectedItems = {}; // Menyimpan item yang dipilih
 
                 let itemTable = $('#itemDataTable').DataTable({
                     "ajax": "GetMasterAssets.php",
                     "columns": [
                         {
-                            "data": null, "render": function (data) {
+                            "data": null,
+                            "orderable": false,
+                            "render": function (data) {
                                 return `<input type='checkbox' class='item-checkbox'
                                  data-code='${data.ItemCode}'
                                  data-name='${data.ItemName}'
@@ -265,11 +349,19 @@ include "layouts/navbar.php";
                 });
 
 
+                $('#itemDataTable thead').on('change', '#select-all-items', function () {
+                    let isChecked = $(this).is(':checked');
+                    $('.item-checkbox').prop('checked', isChecked).trigger('change');
+                });
+
+
                 $('#openItemModal').click(function () {
-                    $('.item-checkbox').prop('checked', false);
+                    $('.item-checkbox').prop('checked', false).trigger('change');
+                    $('#select-all-items').prop('checked', false); // Reset checkbox di header
                     selectedItems = {};
                     $('#itemModal').modal('show');
                 });
+
 
                 // Simpan item yang dipilih
                 $('#itemDataTable tbody').on('change', '.item-checkbox', function () {
@@ -344,6 +436,7 @@ include "layouts/navbar.php";
                         let totalExistingQty = 0;
                         let lastGoodRow = null;
                         let lastDamagedRow = null;
+                        let Terms = $('#terms').val().trim();
 
                         // Cek apakah kondisi "Bagus" dan "Rusak" sudah ada
                         existingRows.each(function () {
@@ -383,6 +476,13 @@ include "layouts/navbar.php";
                             return;
                         }
 
+                        if (Terms == 'Store Closing') {
+                            Alasan = `<option value="Asset Store Closing">Asset Store Closing</option>`;
+                        } else {
+                            Alasan = ``;
+                        }
+
+
                         let defaultKondisi = lastGoodRow ? "2" : "1"; // Jika "Bagus" sudah ada, tambahkan sebagai "Rusak"
                         let kondisiOptions = `
             <option value="1" ${defaultKondisi === '1' ? 'selected' : ''}>Bagus</option>
@@ -400,14 +500,16 @@ include "layouts/navbar.php";
             <td><input type="text" name="itemCode[]" class="form-control" value="${item.itemCode}" readonly></td>
             <td><input type="text" name="itemUom[]" class="form-control" value="${item.itemUom}" readonly></td>
             <td><input type="number" name="AssetQuantity[]" class="form-control" value="${maxQty}" readonly></td>
-            <td><input type="number" name="quantity[]" class="form-control quantity-input" value="1" min="1"></td>
+            <td><input type="number" name="quantity[]" class="form-control quantity-input" value="1" min="1"></td>          
             <td>
-                <select name="kondisiAsset[]" class="form-control kondisi-asset">
-                    ${kondisiOptions}
+                <select name="alasan[]" class="form-control select-alasan" required>
+                ${Alasan}
                 </select>
             </td>
             <td>
-                <select name="alasan[]" class="form-control select-alasan"></select>
+                <select name="kondisiAsset[]" class="form-control kondisi-asset" required>
+                    ${kondisiOptions}
+                </select>
             </td>
             <td><textarea name="keteranganAsset[]" class="form-control" rows="3"></textarea></td>
             <td><button type="button" class="btn btn-danger removeItem">Hapus</button></td>
@@ -446,12 +548,37 @@ include "layouts/navbar.php";
                                 },
                                 processResults: function (data) {
                                     return {
-                                        results: data.results // Sesuai format dari PHP
+                                        results: data.results.map(item => ({
+                                            id: item.id,
+                                            text: item.text,
+                                            kondisi: item.kondisi
+                                        }))
                                     };
                                 },
                                 cache: true
                             }
-                        });
+                        })
+                            .on('select2:select', function (e) {
+                                const selectedData = e.params.data;
+                                const kondisiList = selectedData.kondisi ? selectedData.kondisi.split(',') : [];
+
+                                const $kondisiSelect = $(this).closest('tr').find('.kondisi-asset');
+
+                                // Kosongkan dan isi ulang opsi kondisi
+                                $kondisiSelect.empty().append('');
+                                kondisiList.forEach(kondisi => {
+                                    kondisi = kondisi.trim();
+                                    let value = (kondisi.toLowerCase() === 'bagus') ? 1 :
+                                        (kondisi.toLowerCase() === 'rusak') ? 0 : kondisi;
+
+                                    $kondisiSelect.append(`<option value="${value}">${kondisi}</option>`);
+                                });
+
+                            });
+
+
+
+
                     });
 
                     $('#itemModal').modal('hide');
@@ -543,13 +670,43 @@ include "layouts/navbar.php";
                     data: $(this).serialize(),
                     dataType: "json",
                     success: function (response) {
-                        Swal.fire(response.status === "success" ? "Success" : "Error", response.message, response.status);
-                        if (response.status === "success") {
-                            $("#myForm")[0].reset();
-                            $("#itemTable tbody").empty();
+                        if (response.success) {
+                            let detailList = "<ul>";
+                            response.data.forEach(function (item) {
+                                detailList += `<li><strong>${item.docNum}</strong> → ${item.warehouseTo}</li>`;
+                            });
+                            detailList += "</ul>";
+
+                            Swal.fire({
+                                icon: "success",
+                                title: "Data Berhasil Disimpan!",
+                                html: `
+                    <p>Dokumen yang tergenerate:</p>
+                    ${detailList}
+                `,
+                                confirmButtonText: "OK"
+                            });
+
+                            // Reset form jika perlu
+                            // $("#myForm")[0].reset();
+                            // $("#itemTable tbody").empty();
+                        } else {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Gagal",
+                                text: response.message,
+                            });
                         }
                     },
+                    error: function () {
+                        Swal.fire({
+                            icon: "error",
+                            title: "Oops...",
+                            text: "Terjadi kesalahan saat menghubungi server.",
+                        });
+                    }
                 });
+
             });
 
 
