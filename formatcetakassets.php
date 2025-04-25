@@ -38,7 +38,8 @@ if ($stmt) {
     $sqlheader = "SELECT a.ID,
         a.DocNum,
 		convert(char(10),a.DocDate,126) DocDate,
-        a.StoreCode,
+        a.WarehouseFrom,
+        a.WarehouseTo,
         b.TransName,
         a.TermsAsset,
          CASE
@@ -121,7 +122,7 @@ li {list-style-type:none;}
                 </table>
 
                 <table width="50%" align="left" style="margin-left:200px;">
-                <tr><td width="50%">Dari</td><td>: ' . $rowheader['StoreCode'] . '</td></tr> 
+                <tr><td width="50%">Dari</td><td>: ' . $rowheader['WarehouseFrom'] . '</td></tr> 
                 <tr><td width="50%">Ke</td><td>: ' . $warehouse . '</td></tr> 
                 </table>
 
@@ -184,7 +185,7 @@ li {list-style-type:none;}
     <p>Diberikan Oleh,</p>
     <br><br><br><br>
     <p class="text-muted">......................................................</p>
-    <p>' . $rowheader['StoreCode'] . '</p>
+    <p>' . $rowheader['WarehouseFrom'] . '</p>
   </div>
   </td>
   <td align="right">

@@ -688,8 +688,8 @@ include "layouts/navbar.php";
                             });
 
                             // Reset form jika perlu
-                            // $("#myForm")[0].reset();
-                            // $("#itemTable tbody").empty();
+                            $("#myForm")[0].reset();
+                            $("#itemTable tbody").empty();
                         } else {
                             Swal.fire({
                                 icon: "error",

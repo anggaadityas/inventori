@@ -1,9 +1,11 @@
 <?php
 session_start();
+
 use PHPMailer\PHPMailer\PHPMailer;
 require_once "PHPMailer/PHPMailer.php";
 require_once "PHPMailer/SMTP.php";
 require_once "PHPMailer/Exception.php";
+
 $serverName = "192.168.2.135"; // atau IP/hostname server SQL
 $connectionOptions = array(
     "Database" => "DB_SCK", // ganti dengan nama database Anda
@@ -32,7 +34,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $rev_question = $_POST['rev_question'] ?? null;
     $revDocDate = $_POST['rev_date_req'] ?? null;
     $createdBy = $_SESSION['nama'];
-    $StoreCode = $_POST['StoreCode'];
+    $StoreCode = $_POST['WarehouseFrom'] ?? null;
+    $WarehouseTo = $_POST['WarehouseTo'] ?? null;
 
     if ($rev_question == 1) {
         $fixDocDate = $revDocDate;
@@ -248,14 +251,112 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $doneSteps = $rowDone['Done'];
 
                     // 3. Jika semua step sudah selesai, update header status
-                    if ($totalSteps == $doneSteps) {
-                        $sqlUpdateHeader = "UPDATE InventoriAssetHeader SET ApprovalUser=NULL,ApprovalUserName=NULL,ApprovalStatus = 'Selesai', ApprovalProgress=4, StatusDoc='Selesai' WHERE ID = ?";
-                        sqlsrv_query($conn, $sqlUpdateHeader, [$TransID]);
 
-                        // echo "Header updated to 'Selesai' for TransID $TransID\n";
-                    } else {
-                        // echo "Approval masih berjalan. ($doneSteps / $totalSteps selesai)\n";
+                    try {
+                        if ($totalSteps == $doneSteps) {
+                            // Update the header status
+                            $sqlUpdateHeader = "UPDATE InventoriAssetHeader SET ApprovalUser=NULL, ApprovalUserName=NULL, ApprovalStatus = 'Selesai', ApprovalProgress=4, StatusDoc='Selesai' WHERE ID = ?";
+                            $updateHeaderResult = sqlsrv_query($conn, $sqlUpdateHeader, [$TransID]);
+
+                            if ($updateHeaderResult === false) {
+                                throw new Exception("Error updating InventoriAssetHeader: " . print_r(sqlsrv_errors(), true));
+                            }
+
+                            // Fetch items from the transaction detail
+                            $sqlItems = "SELECT A.ItemCode, A.ItemName, A.ItemUom, A.Quantity, A.WarehouseTo,B.TermsRetur,B.TermsStoreClosing
+                            ,B.AssetConditionOK,B.AssetConditionNonOK FROM InventoriAssetDetail A
+                            LEFT JOIN MasterAssets B ON A.ItemCode = B.ItemCode
+                             WHERE TransID = ?  AND B.Warehouse= ? AND StatusApprovalAM = 1 AND StatusApprovalDistribusi = 1";
+                            $stmtItems = sqlsrv_query($conn, $sqlItems, [$TransID, $StoreCode]);
+
+                            if ($stmtItems === false) {
+                                throw new Exception("Error fetching items from InventoriAssetDetail: " . print_r(sqlsrv_errors(), true));
+                            }
+
+                            while ($row = sqlsrv_fetch_array($stmtItems, SQLSRV_FETCH_ASSOC)) {
+                                $ItemCode = $row['ItemCode'];
+                                $ItemName = $row['ItemName'];
+                                $ItemUom = $row['ItemUom'];
+                                $Qty = $row['Quantity'];
+                                $WarehouseFrom = $StoreCode;
+                                $WarehouseTo = $WarehouseTo;
+                                $TermsRetur = $row['TermsRetur'];
+                                $TermsStoreClosing = $row['TermsStoreClosing'];
+                                $AssetConditionOK = $row['AssetConditionOK'];
+                                $AssetConditionNonOK = $row['AssetConditionNonOK'];
+                                $CreatedBy = 'AutoSystem'; // Bisa ganti dengan session login
+                                $Now = date('Y-m-d H:i:s');
+
+                                // Insert into MasterAssetLog
+                                $sqlInsertLog = "INSERT INTO MasterAssetLogs (ItemType, ItemCode, ItemName, ItemUom, AssetQuantity, CreatedDate, CreatedBy, IsActive, WarehouseFrom, WarehouseTo, DocTrans, TypeTrans, RemarksTrans, DateTrans) 
+                                                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                                $paramsLog = [3, $ItemCode, $ItemName, $ItemUom, $Qty, $Now, $CreatedBy, 1, $WarehouseFrom, $WarehouseTo, $TransID, $TransName, 'Auto insert from approval proses', $Now];
+                                $insertLogResult = sqlsrv_query($conn, $sqlInsertLog, $paramsLog);
+
+                                if ($insertLogResult === false) {
+                                    throw new Exception("Error inserting into MasterAssetLog: " . print_r(sqlsrv_errors(), true));
+                                }
+
+                                // Check if the asset exists in MasterAsset for WarehouseTo
+                                $sqlCheckAsset = "SELECT ID, AssetQuantity FROM MasterAssets WHERE ItemCode = ? AND Warehouse = ?";
+                                $stmtCheck = sqlsrv_query($conn, $sqlCheckAsset, [$ItemCode, $WarehouseTo]);
+
+                                if ($stmtCheck === false) {
+                                    throw new Exception("Error checking asset in MasterAssets: " . print_r(sqlsrv_errors(), true));
+                                }
+
+                                if ($existing = sqlsrv_fetch_array($stmtCheck, SQLSRV_FETCH_ASSOC)) {
+                                    // Update the quantity for existing asset in WarehouseTo
+                                    $newQty = $existing['AssetQuantity'] + $Qty;
+                                    $sqlUpdateAsset = "UPDATE MasterAssets SET AssetQuantity = ?, UpdatedDate = ?, UpdatedBy = ? WHERE ID = ?";
+                                    $updateAssetResult = sqlsrv_query($conn, $sqlUpdateAsset, [$newQty, $Now, $CreatedBy, $existing['ID']]);
+
+                                    if ($updateAssetResult === false) {
+                                        throw new Exception("Error updating asset in MasterAsset for WarehouseTo: " . print_r(sqlsrv_errors(), true));
+                                    }
+                                } else {
+                                    // Insert new asset for WarehouseTo
+                                    $sqlInsertAsset = "INSERT INTO MasterAssets (ItemCode, ItemName, ItemUom, AssetQuantity, CreatedDate, CreatedBy, IsActive, Warehouse, TermsRetur, TermsStoreClosing, AssetConditionOK, AssetConditionNonOK) 
+                                                       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                                    $paramsAsset = [$ItemCode, $ItemName, $ItemUom, $Qty, $Now, $CreatedBy, 1, $WarehouseTo, $TermsRetur, $TermsStoreClosing, $AssetConditionOK, $AssetConditionNonOK];
+                                    $insertAssetResult = sqlsrv_query($conn, $sqlInsertAsset, $paramsAsset);
+
+                                    if ($insertAssetResult === false) {
+                                        throw new Exception("Error inserting into MasterAssets for WarehouseTo: " . print_r(sqlsrv_errors(), true));
+                                    }
+                                }
+
+                                // Check and update asset quantity in WarehouseFrom
+                                $stmtCheckFrom = sqlsrv_query($conn, $sqlCheckAsset, [$ItemCode, $WarehouseFrom]);
+
+                                if ($stmtCheckFrom === false) {
+                                    throw new Exception("Error checking asset in MasterAsset for WarehouseFrom: " . print_r(sqlsrv_errors(), true));
+                                }
+
+                                if ($existing = sqlsrv_fetch_array($stmtCheckFrom, SQLSRV_FETCH_ASSOC)) {
+                                    $newQty = $existing['AssetQuantity'] - $Qty;
+                                    $sqlUpdateAsset = "UPDATE MasterAssets SET AssetQuantity = ?, UpdatedDate = ?, UpdatedBy = ? WHERE ID = ?";
+                                    $updateAssetResult = sqlsrv_query($conn, $sqlUpdateAsset, [$newQty, $Now, $CreatedBy, $existing['ID']]);
+
+                                    if ($updateAssetResult === false) {
+                                        throw new Exception("Error updating asset in MasterAssets for WarehouseFrom: " . print_r(sqlsrv_errors(), true));
+                                    }
+                                }
+                            }
+
+                            // Commit the transaction if everything is successful
+                            sqlsrv_query($conn, "COMMIT TRANSACTION");
+                        } else {
+                            // echo "Approval still in progress. ($doneSteps / $totalSteps completed)\n";
+                        }
+                    } catch (Exception $e) {
+                        // Rollback the transaction if any error occurs
+                        sqlsrv_query($conn, "ROLLBACK TRANSACTION");
+
+                        // Optionally log the error or handle it as needed
+                        echo "Error: " . $e->getMessage();
                     }
+
 
 
                     $itemList = "";
@@ -279,56 +380,88 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </tr>";
                     }
 
-                    $bodyEmail = "
-                    <style>
-                        body {
-                            font-family: Arial, sans-serif;
-                            font-size: 14px;
-                            color: #333;
-                        }
-                        h3 {
-                            margin-bottom: 10px;
-                        }
-                        .info {
-                            margin: 0;
-                            padding: 2px 0;
-                        }
-                        table {
-                            border-collapse: collapse;
-                            width: 100%;
-                            margin-top: 15px;
-                        }
-                        table th, table td {
-                            border: 1px solid #ccc;
-                            padding: 6px 10px;
-                            text-align: left;
-                        }
-                        table th {
-                            background-color: #f2f2f2;
-                        }
-                    </style>
-                
-                    <p class='info'><strong>No Dokumen:</strong> {$docNum}</p>
-                    <p class='info'><strong>Transaksi:</strong> {$TransName}</p>
-                    <p class='info'><strong>Dibuat Oleh:</strong> {$StoreCode}</p>
-                    <p class='info'><strong>Approval By:</strong> {$Approval}</p>
-                    <p class='info'><strong>Tanggal Pengiriman:</strong> {$fixnotiftanggalkirim}</p>
-                    <p class='info'><strong>Catatan Approval:</strong> {$ApprovalRemarks}</p>
-                    <br><br>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Kode Item</th>
-                                <th>Nama Item</th>
-                                <th>Qty</th>
-                                <th>Status Approval</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {$itemList}
-                        </tbody>
-                    </table>
-                ";
+                    $bodyEmail = '
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="UTF-8">
+                            <style>
+                                body {
+                                    font-family: "Segoe UI", Arial, sans-serif;
+                                    font-size: 14px;
+                                    color: #333;
+                                    margin: 0;
+                                    padding: 20px;
+                                }
+                                .info-table {
+                                    width: 100%;
+                                    border-collapse: collapse;
+                                    margin-bottom: 10px;
+                                }
+                                .info-table td {
+                                    padding: 2px 6px;
+                                    vertical-align: top;
+                                }
+                                .info-table td.label {
+                                    font-weight: bold;
+                                    width: 160px;
+                                }
+                                .item-table {
+                                    border-collapse: collapse;
+                                    width: 100%;
+                                    margin-top: 15px;
+                                    margin-bottom: 10px;
+                                }
+                                .item-table th, .item-table td {
+                                    border: 1px solid #ddd;
+                                    padding: 8px 10px;
+                                    text-align: left;
+                                }
+                                .item-table th {
+                                    background-color: #f5f5f5;
+                                }
+                                .footer {
+                                    margin-top: 5px;
+                                    line-height: 1.4;
+                                }
+                            </style>
+                        </head>
+                        <body>
+
+                            <table class="info-table">
+                                <tr><td class="label">No Dokumen:</td><td>' . $docNum . '</td></tr>
+                                <tr><td class="label">Transaksi:</td><td>' . $TransName . '</td></tr>
+                                <tr><td class="label">Dibuat Oleh:</td><td>' . $StoreCode . '</td></tr>
+                                <tr><td class="label">Approval By:</td><td>' . $Approval . '</td></tr>
+                                <tr><td class="label">Tanggal Pengiriman:</td><td>' . $fixnotiftanggalkirim . '</td></tr>
+                                <tr><td class="label">Catatan Approval:</td><td>' . $ApprovalRemarks . '</td></tr>
+                            </table>
+                            <br>
+                            <table class="item-table">
+                                <thead>
+                                    <tr>
+                                        <th>Kode Item</th>
+                                        <th>Nama Item</th>
+                                        <th>Qty</th>
+                                        <th>Status Approval</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ' . $itemList . '
+                                </tbody>
+                            </table>
+                            <br>
+                            <div class="footer">
+                                Terima kasih atas perhatian Anda.<br>
+                                Hormat kami,<br>
+                                Sistem Inventaris Assets
+                            </div>
+
+                        </body>
+                        </html>';
+
+
+
 
                     // Kirim email
                     $mail = new PHPMailer();

@@ -41,9 +41,9 @@ if ($area_div == 'AM' or $area_div == 'PROJECT' or $area_div == 'CK JAKARTA' or 
 	$filter1 = "WHERE  (WarehouseFrom is not null or WarehouseFrom='') AND " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
 	$orderby = "ORDER BY a.ID desc";
 } else {
-	$where = "WHERE WarehouseFrom='" . $store1 . "'";
-	$filter = "WHERE WarehouseFrom='" . $store1 . "' AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
-	$filter1 = "WHERE  WarehouseFrom='" . $store1 . "' " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
+	$where = "WHERE (WarehouseFrom='" . $store1 . "' OR WarehouseTo='" . $store1 . "')";
+	$filter = "WHERE (WarehouseFrom='" . $store1 . "' OR WarehouseTo='" . $store1 . "') AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
+	$filter1 = "WHERE  (WarehouseFrom='" . $store1 . "'OR WarehouseTo='" . $store1 . "') " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
 	$orderby = "ORDER BY a.ID desc";
 }
 

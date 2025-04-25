@@ -5,7 +5,8 @@ $id = $_GET['id'];
 $sqlheader = "SELECT a.ID,
         a.DocNum,
 		convert(char(10),a.DocDate,126) DocDate,
-        a.StoreCode,
+        a.WarehouseFrom,
+        a.WarehouseTo,
         b.TransName,
         a.TermsAsset,
          CASE
@@ -34,7 +35,7 @@ include "layouts/navbar.php";
     <div class="row">
 
         <div class="col-sm-12" style="margin-top: 26px;">
-            <span style="font-size:18px;"><b>* View Approve Permintaan Retur Barang Store
+            <span style="font-size:18px;"><b>* View Pengajuan Inventaris Asset #
                     <?php echo $rowheader['DocNum']; ?></b></span>
             <br><br><br>
 
@@ -232,6 +233,8 @@ include "layouts/navbar.php";
                                     <th>Kondisi Asset</th>
                                     <th>Qty</th>
                                     <th>Warehouse Tujuan</th>
+                                    <th>Status Approval AM</th>
+                                    <th>Status Approval Distribusi</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -263,6 +266,14 @@ include "layouts/navbar.php";
                                     <td>
                                         <?php foreach ($values as $item)
                                             echo $item['WarehouseTo'] . '<br/><hr>'; ?>
+                                    </td>
+                                    <td>
+                                        <?php foreach ($values as $item)
+                                            echo $item['StatusApprovalAM'] . '<br/><hr>'; ?>
+                                    </td>
+                                    <td>
+                                        <?php foreach ($values as $item)
+                                            echo $item['StatusApprovalDistribusi'] . '<br/><hr>'; ?>
                                     </td>
                                 </tr>
                             </tbody>

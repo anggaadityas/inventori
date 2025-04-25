@@ -3,6 +3,11 @@ session_start();
 header('Content-Type: application/json');
 $response = ['success' => false, 'message' => '', 'data' => []];
 
+use PHPMailer\PHPMailer\PHPMailer;
+require_once "PHPMailer/PHPMailer.php";
+require_once "PHPMailer/SMTP.php";
+require_once "PHPMailer/Exception.php";
+
 $serverName = "192.168.2.135";
 $connectionOptions = [
     "Database" => "DB_SCK",
@@ -156,9 +161,9 @@ try {
 
     foreach ($itemCodes as $i => $code) {
         $kondisi = $kondisiAssets[$i];
-        if($jenisPermintaan==3){
+        if ($jenisPermintaan == 3) {
             $warehouse = $kondisi == 1 ? $assetConditionOk[$i] : $assetConditionNonOk[$i];
-        }else{
+        } else {
             $warehouse = $WarehouseTo;
         }
         $groupKey = $kondisi . '_' . $warehouse;
@@ -225,16 +230,16 @@ try {
             $sqlDetail = "INSERT INTO InventoriAssetDetail 
            (TransID, ItemCode, ItemName, ItemUom, Quantity, ConditionAsset, Reason,Remarks, WarehouseFrom,WarehouseTo,CreatedBy) 
             VALUES (?,?,?,?,?,?,?,?,?,?,?);";
-            
-            if($jenisPermintaan==3){
+
+            if ($jenisPermintaan == 3) {
                 if ($group['warehouse'] == 'Project') {
                     $fixarea = '';
                 } else {
                     $fixarea = $area;
                 }
-             }else{
+            } else {
                 $fixarea = '';
-             }
+            }
 
             $paramsDetail = [
                 $transID,
@@ -318,7 +323,7 @@ try {
         }
 
         // === Tentukan user approval WH ===
-        if($jenisPermintaan==3){
+        if ($jenisPermintaan == 3) {
             if ($group['warehouse'] == 'CK') {
                 $userIDApproval = $userid_ck;
                 $userNameApproval = $ck_area;
@@ -335,19 +340,19 @@ try {
                 $userIDApproval = '';
                 $userNameApproval = '';
             }
-         }else{
-            $store =$group['warehouse'];
+        } else {
+            $store = $group['warehouse'];
             $servername = "192.168.2.136";
             $username = "root";
             $password = "aas260993";
             $dbname = "voucher_trial";
             $connmysqli = mysqli_connect($servername, $username, $password, $dbname) or die("Connection failed: " . mysqli_connect_error());
-            $tsql = "SELECT id_user FROM mst_user WHERE nama= '$store'";   
-            $stmt = mysqli_query($connmysqli,$tsql);
-            $user =mysqli_fetch_array($stmt);
+            $tsql = "SELECT id_user FROM mst_user WHERE nama= '$store'";
+            $stmt = mysqli_query($connmysqli, $tsql);
+            $user = mysqli_fetch_array($stmt);
             $userIDApproval = $user['id_user'];
             $userNameApproval = $group['warehouse'];
-         }
+        }
 
         // === Insert Approval WH ===
         $sqlApprovalWH = "
@@ -377,12 +382,78 @@ try {
             exit;
         }
 
+        // === Insert Log ke InventoriAssetLog ===
+        $sqlLog = "
+        INSERT INTO InventoriAssetLog 
+            (TransID, DocProgress, Remarks, CreatedBy) 
+        VALUES (?, ?, ?, ?)";
+
+        $paramsLog = [
+            $transID,
+            'Created',
+            'Dokumen dibuat',
+            $createdBy
+        ];
+
+        $stmtLog = sqlsrv_query($conn, $sqlLog, $paramsLog);
+        if ($stmtLog === false) {
+            sqlsrv_rollback($conn);
+            $errors = sqlsrv_errors();
+            echo json_encode([
+                "status" => "error",
+                "message" => "Gagal menyimpan log Inventori Asset.",
+                "errors" => $errors
+            ]);
+            exit;
+        }
+
     }
 
-    sqlsrv_commit($conn);
-    $response['success'] = true;
-    $response['message'] = "Data berhasil disimpan";
-    $response['data'] = $generatedDocs;
+    // Kirim email ke AM
+    $mail = new PHPMailer();
+    try {
+        // Konfigurasi SMTP
+        $mail->isSMTP();
+        $mail->Host = "mail.multirasa.co.id";
+        $mail->SMTPAuth = true;
+        $mail->Username = "info.voucherrequest@multirasa.co.id";
+        $mail->Password = 'yoshimulti';
+        $mail->Port = 465;
+        $mail->SMTPSecure = "ssl";
+
+        $am = 'angga.aditya@multirasa.co.id';
+        // Penerima
+        $mail->setFrom('info.voucherrequest@multirasa.co.id', 'Sistem Approval');
+        $mail->addAddress($am);
+
+        $mail->isHTML(true);
+        $mail->Subject = "Notifikasi Pengajuan Inventaris Assets";
+        $mail->Body = 'Dear Pa ' . $am . ',<br><br>' .
+            'Store ' . $createdBy . ' telah mengajukan permohonan inventaris assets dengan detail sebagai berikut :<br>' .
+            '<table border="1" cellpadding="5" cellspacing="0">' .
+            '<tr><th>DocNum</th><th>WarehouseTo</th></tr>';
+        foreach ($generatedDocs as $doc) {
+            $mail->Body .= '<tr><td>' . $doc['docNum'] . '</td><td>' . $doc['warehouseTo'] . '</td></tr>';
+        }
+        $mail->Body .= '</table><br>' .
+            'Silakan cek di sistem untuk detail lebih lanjut.<br><br>' .
+            'Terima kasih atas perhatian Anda,<br>' .
+            'Hormat Kami,<br>' .
+            'Sistem Inventaris Assets';
+
+        if ($mail->send()) {
+            sqlsrv_commit($conn);
+            $response['success'] = true;
+            $response['message'] = "Data berhasil disimpan";
+            $response['data'] = $generatedDocs;
+        } else {
+            sqlsrv_rollback($conn);
+            $response['success'] = false;
+            $response['message'] = "Terjadi kesalahan: " . $mail->ErrorInfo . ", " . $e->getMessage();
+        }
+    } catch (Exception $e) {
+        $response['message'] .= " Email gagal dikirim. Error: {$mail->ErrorInfo}";
+    }
 
 } catch (Exception $e) {
     sqlsrv_rollback($conn);

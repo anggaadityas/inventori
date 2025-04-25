@@ -5,7 +5,8 @@ include 'db.php';
 $response = [];
 $user = $_SESSION['nama'];
 try {
-    $query = "SELECT Warehouse,ItemCode, ItemName, ItemUom,AssetQuantity,AssetConditionOk,AssetConditionNonOk FROM MasterAssets WHERE Warehouse='$user'";
+    $query = "SELECT Warehouse,ItemCode, ItemName, ItemUom,AssetQuantity,AssetConditionOk,AssetConditionNonOk FROM MasterAssets WHERE Warehouse='$user'
+    AND AssetQuantity > 0";
     $stmt = sqlsrv_query($conn, $query);
 
     if ($stmt === false) {

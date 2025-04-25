@@ -5,7 +5,8 @@ $id = $_GET['id'];
 $sqlheader = "SELECT a.ID,
         a.DocNum,
 		convert(char(10),a.DocDate,126) DocDate,
-        a.StoreCode,
+        a.WarehouseFrom,
+        a.WarehouseTo,
         b.TransName,
         a.TermsAsset,
          CASE
@@ -98,10 +99,17 @@ include "layouts/navbar.php";
                         </div>
                     </div>
                     <div class="form-group row">
-                        <label for="inputPassword" class="col-sm-2 col-form-label">Toko</label>
+                        <label for="inputPassword" class="col-sm-2 col-form-label">WarehouseFrom</label>
                         <div class="col-sm-2">
-                            <input type="text" class="form-control" id="StoreCode" name="StoreCode"
-                                value="<?php echo $rowheader['StoreCode']; ?>" readonly>
+                            <input type="text" class="form-control" id="WarehouseFrom" name="WarehouseFrom"
+                                value="<?php echo $rowheader['WarehouseFrom']; ?>" readonly>
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label for="inputPassword" class="col-sm-2 col-form-label">WarehouseTo</label>
+                        <div class="col-sm-2">
+                            <input type="text" class="form-control" id="WarehouseTo" name="WarehouseTo"
+                                value="<?php echo $rowheader['WarehouseTo']; ?>" readonly>
                         </div>
                     </div>
                     <div class="form-group row">
@@ -422,10 +430,10 @@ include "layouts/navbar.php";
                                 dataType: "html",
                                 success: function (response) {
                                     swal.fire("Berhasil!", response, "success");
-                                    setTimeout(function () {
-                                        location.reload();
-                                    }, 5000);
-                                    location.href = 'listrequestassets.php';
+                                  //  setTimeout(function () {
+                                        // location.reload();
+                                    // }, 5000); 
+                                   // location.href = 'listrequestassets.php';
                                 },
                                 error: function (xhr, ajaxOptions, thrownError) {
                                     setTimeout(function () {
