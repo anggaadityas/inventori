@@ -38,7 +38,6 @@ include "layouts/navbar.php";
                                 <option value=''>-- Select Status --</option>
                                 <option value='1'>Normal</option>
                                 <option value='2'>Darurat</option>
-                                <option value='3'>Hari H</option>
                             </select>
                         </div>
                     </div>
@@ -48,7 +47,7 @@ include "layouts/navbar.php";
                         <div class="col-sm-12">
                             <select id='searchByJenisSistem'>
                                 <option value=''>-- Select Status --</option>
-                                <option value='Special Condition'>Special Condition</option>
+                                <option value='Transfer Antar Store'>Transfer Antar Store</option>
                                 <option value='Retur'>Retur</option>
                                 <option value='Store Closing'>Store Closing</option>
                             </select>

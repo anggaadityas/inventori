@@ -20,6 +20,20 @@ if ($conn === false)
     throw new Exception(print_r(sqlsrv_errors(), true));
 sqlsrv_begin_transaction($conn);
 
+$servername = "192.168.2.136";
+$username = "root";
+$password = "aas260993";
+$dbname = "voucher_trial";
+
+$am_id=$_SESSION["am_id"];
+$connmysl = mysqli_connect($servername, $username, $password, $dbname) or die("Connection failed: " . mysqli_connect_error());
+$tsql = "SELECT * FROM mst_user a INNER JOIN mst_divisi b
+              on a.div_id=b.id_divisi WHERE a.id_user= '$am_id'";   
+
+
+$stmt = mysqli_query($connmysl,$tsql);
+$useram =mysqli_fetch_array($stmt);
+
 try {
     $jenisPermintaan = $_POST['jenis_permintaan'];
     $jenisPrioritas = $_POST['jenis_prioritas'];
@@ -148,13 +162,15 @@ try {
     $proj_area = $rowck['PROJ'];
     $userid_proj = $rowck['iduserproj'];
 
-    $amId = 386;
-    $amName = 'AM';
+    $amId = $useram['id_user'];
+    $amName = $useram['nama'];
     $approvalprogress = 1; // Status awal
     $approvalstatus = "Menunggu Approval AM";
     $statusDoc = 'Open';
     $approvalusername = 'AM';
 
+    $rmId = 367;
+    $rmName = 'RM';
 
     // Grouping data berdasarkan kondisiAsset dan warehouse
     $grouped = [];
@@ -294,6 +310,34 @@ try {
             exit;
         }
 
+        // === Insert Approval RM ===
+        $sqlApprovalRM = "
+        INSERT INTO InventoriApprovalAsset 
+            (TransID, DocTrans, UserIDApproval, UserNameApproval, StatusApproval, CreatedBy, ApprovalStep)
+        VALUES (?, ?, ?, ?, ?, ?, ?)";
+
+        $paramsRM = [
+            $transID,
+            $jenisPermintaan,
+            $rmId,
+            $rmName,
+            'Menunggu Approval RM',
+            $createdBy,
+            2
+        ];
+
+        $stmtApprovalRM = sqlsrv_query($conn, $sqlApprovalRM, $paramsRM);
+        if ($stmtApprovalRM === false) {
+            sqlsrv_rollback($conn);
+            $errors = sqlsrv_errors();
+            echo json_encode([
+                "status" => "error",
+                "message" => "Gagal menyimpan approval AM.",
+                "errors" => $errors
+            ]);
+            exit;
+        }
+
         // === Insert Approval Distribusi ===
         $sqlApprovalDistribusi = "
         INSERT INTO InventoriApprovalAsset 
@@ -307,7 +351,7 @@ try {
             $distribusi_area,
             'Menunggu Approval Distribusi',
             $createdBy,
-            2
+            3
         ];
 
         $stmtApprovalDistribusi = sqlsrv_query($conn, $sqlApprovalDistribusi, $paramsDistribusi);
@@ -367,7 +411,7 @@ try {
             $userNameApproval,
             'Menunggu Verifikasi Warehouse',
             $createdBy,
-            3
+            4
         ];
 
         $stmtApprovalWH = sqlsrv_query($conn, $sqlApprovalWH, $paramsApprovalWH);

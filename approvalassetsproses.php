@@ -255,7 +255,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     try {
                         if ($totalSteps == $doneSteps) {
                             // Update the header status
-                            $sqlUpdateHeader = "UPDATE InventoriAssetHeader SET ApprovalUser=NULL, ApprovalUserName=NULL, ApprovalStatus = 'Selesai', ApprovalProgress=4, StatusDoc='Selesai' WHERE ID = ?";
+                            $sqlUpdateHeader = "UPDATE InventoriAssetHeader SET ApprovalUser=NULL, ApprovalUserName=NULL, ApprovalStatus = 'Close', ApprovalProgress=4, StatusDoc='Close' WHERE ID = ?";
                             $updateHeaderResult = sqlsrv_query($conn, $sqlUpdateHeader, [$TransID]);
 
                             if ($updateHeaderResult === false) {

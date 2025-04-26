@@ -2,6 +2,7 @@
 include "layouts/header.php";
 // error_reporting(0);
 $id = $_GET['id'];
+$area_div=$_SESSION['area_div'];
 $sqlheader = "SELECT a.ID,
         a.DocNum,
 		convert(char(10),a.DocDate,126) DocDate,
@@ -36,7 +37,7 @@ include "layouts/navbar.php";
     <div class="row">
 
         <div class="col-sm-12" style="margin-top: 26px;">
-            <span style="font-size:18px;"><b>* View Approve Permintaan Retur Barang Store
+            <span style="font-size:18px;"><b>* View Approval Pengajuan Inventaris Asset #
                     <?php echo $rowheader['DocNum']; ?></b></span>
             <br><br><br>
 
@@ -138,7 +139,7 @@ include "layouts/navbar.php";
                     $warehouseto = '';
                 }
 
-                if ($name == 'AM') {
+                if ($area_div == 'AM') {
                     $am = '';
                 } else {
                     $am = 'AND StatusApprovalAM=1';
@@ -430,10 +431,10 @@ include "layouts/navbar.php";
                                 dataType: "html",
                                 success: function (response) {
                                     swal.fire("Berhasil!", response, "success");
-                                  //  setTimeout(function () {
-                                        // location.reload();
-                                    // }, 5000); 
-                                   // location.href = 'listrequestassets.php';
+                                    setTimeout(function () {
+                                        location.reload();
+                                     }, 5000); 
+                                   location.href = 'listrequestassets.php';
                                 },
                                 error: function (xhr, ajaxOptions, thrownError) {
                                     setTimeout(function () {

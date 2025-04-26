@@ -7,7 +7,7 @@ $requestData = $_REQUEST;
 if ($requestData['searchByJenisPrioritas'] == '') {
 	$jenisprioritas = " ";
 } else {
-	$jenisprioritas = "AND DocPriority = '" . $requestData['searchByJenisPrioritas'] . "'";
+	$jenisprioritas = "AND DocPriority = '" . $requestData['searchByJenisPrioritas'] . "' ";
 }
 
 if ($requestData['searchByJenisSistem'] == '') {
@@ -31,19 +31,27 @@ if ($requestData['searchByStartdate'] == '' or $requestData['searchByEnddate'] =
 if ($requestData['searchByStatusDokumen'] == '') {
 	$statusdokumen = " ";
 } else {
-	$statusdokumen = "AND DocStatus = '" . $requestData['searchByStatusDokumen'] . "'";
+	$statusdokumen = "AND StatusDoc = '" . $requestData['searchByStatusDokumen'] . "'";
 }
 
 
-if ($area_div == 'AM' or $area_div == 'PROJECT' or $area_div == 'CK JAKARTA' or $area_div == 'CK SURABAYA' or $area_div == 'IT JAKARTA' or $area_div == 'IT SURABAYA' or $area_div == 'GA JAKARTA' or $area_div == 'GA SURABAYA' or $area_div == 'ENG JAKARTA' or $area_div == 'ENG SURABAYA' or $area_div == 'IAC') {
+if ($area_div == 'RM' or $area_div == 'PROJECT' or $area_div == 'CK JAKARTA' or $area_div == 'CK SURABAYA' or $area_div == 'IT JAKARTA' or $area_div == 'IT SURABAYA' or $area_div == 'GA JAKARTA' or $area_div == 'GA SURABAYA' or $area_div == 'ENG JAKARTA' or $area_div == 'ENG SURABAYA' or $area_div == 'IAC') {
 	$where = "WHERE (WarehouseFrom is not null or WarehouseFrom='')";
+	$where1 = " UserNameApprovalList  LIKE '%" . $_SESSION['nama'] . "%'  ";
 	$filter = "WHERE  (WarehouseFrom is not null or WarehouseFrom='') AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
-	$filter1 = "WHERE  (WarehouseFrom is not null or WarehouseFrom='') AND " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
+	$filter1 = "WHERE  (WarehouseFrom is not null or WarehouseFrom='')  " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
+	$orderby = "ORDER BY a.ID desc";
+} else if ($area_div == 'AM') {
+	$where = "WHERE (WarehouseFrom is not null or WarehouseFrom='')";
+	$where1 = " UserNameApprovalList  LIKE '%" . $_SESSION['nama'] . "%'  ";
+	$filter = "WHERE  (WarehouseFrom is not null or WarehouseFrom='') AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
+	$filter1 = "WHERE  (WarehouseFrom is not null or WarehouseFrom='')  " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
 	$orderby = "ORDER BY a.ID desc";
 } else {
+	$where1 = ' UserNameApprovalList IS NOT NULL';
 	$where = "WHERE (WarehouseFrom='" . $store1 . "' OR WarehouseTo='" . $store1 . "')";
 	$filter = "WHERE (WarehouseFrom='" . $store1 . "' OR WarehouseTo='" . $store1 . "') AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
-	$filter1 = "WHERE  (WarehouseFrom='" . $store1 . "'OR WarehouseTo='" . $store1 . "') " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
+	$filter1 = "WHERE  (WarehouseFrom='" . $store1 . "'OR WarehouseTo='" . $store1 . "')  " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
 	$orderby = "ORDER BY a.ID desc";
 }
 
@@ -85,10 +93,18 @@ FROM
 		a.ApprovalStatus,
 		a.StatusDoc,
 		a.RemarksIAC,
+		(
+            SELECT STUFF((
+                SELECT ' | ' + at.UserNameApproval
+                FROM InventoriApprovalAsset at
+                WHERE at.TransID = a.ID
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 3, '')
+        ) AS UserNameApprovalList,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
-      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID
-			" . $where . "
-) sub " . $where . " ";
+      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
+$sql .= " " . $where . "";
+$sql .= ") sub WHERE " . $where1 . "";
 $params = array();
 $options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
 $query = sqlsrv_query($conn, $sql, $params, $options) or die("data.php: get InventoryItems" . $sql . "");
@@ -119,6 +135,14 @@ FROM
 		a.ApprovalStatus,
 		a.StatusDoc,
 		a.RemarksIAC,
+		(
+            SELECT STUFF((
+                SELECT ' | ' + at.UserNameApproval
+                FROM InventoriApprovalAsset at
+                WHERE at.TransID = a.ID
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 3, '')
+        ) AS UserNameApprovalList,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
       FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
 	$sql .= " " . $filter . "";
@@ -127,7 +151,7 @@ FROM
 	$options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
 	$query = sqlsrv_query($conn, $sql, $params, $options) or die("data.php: get PO1" . $sql . "");
 	$totalFiltered = sqlsrv_num_rows($query);
-	$sql .= " WHERE rowNum > " . $requestData['start'] . " AND rowNum <= " . $requestData['start'] . " + " . $requestData['length'] . "";
+	$sql .= " WHERE " . $where1 . " AND rowNum > " . $requestData['start'] . " AND rowNum <= " . $requestData['start'] . " + " . $requestData['length'] . "";
 	$params = array();
 	$options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
 	$query = sqlsrv_query($conn, $sql, $params, $options) or die("data.php: get PO2" . $sql . "");
@@ -157,6 +181,14 @@ FROM
 		a.ApprovalStatus,
 		a.StatusDoc,
 		a.RemarksIAC,
+		(
+            SELECT STUFF((
+                SELECT ' | ' + at.UserNameApproval
+                FROM InventoriApprovalAsset at
+                WHERE at.TransID = a.ID
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 3, '')
+        ) AS UserNameApprovalList,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
       FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
 	$sql .= " " . $filter1 . "";
@@ -165,7 +197,7 @@ FROM
 	$options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
 	$query = sqlsrv_query($conn, $sql, $params, $options) or die("data.php: get PO1" . $sql . "");
 	$totalFiltered = sqlsrv_num_rows($query);
-	$sql .= " WHERE rowNum > " . $requestData['start'] . " AND rowNum <= " . $requestData['start'] . " + " . $requestData['length'] . " ";
+	$sql .= " WHERE " . $where1 . "  AND rowNum > " . $requestData['start'] . " AND rowNum <= " . $requestData['start'] . " + " . $requestData['length'] . " ";
 	$params = array();
 	$options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
 	$query = sqlsrv_query($conn, $sql, $params, $options) or die("data.php: get PO2" . $sql . "");
@@ -195,11 +227,19 @@ FROM
 		a.ApprovalStatus,
 		a.StatusDoc,
 		a.RemarksIAC,
+		(
+            SELECT STUFF((
+                SELECT ' | ' + at.UserNameApproval
+                FROM InventoriApprovalAsset at
+                WHERE at.TransID = a.ID
+                FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)'), 1, 3, '')
+        ) AS UserNameApprovalList,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
-      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID
-			 " . $where . "
-	) sub ";
-	$sql .= " " . $where . " AND  rowNum > " . $requestData['start'] . " AND rowNum <= " . $requestData['start'] . " + " . $requestData['length'] . "";
+      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
+	$sql .= " " . $where . "";
+	$sql .= ") sub ";
+	$sql .= " WHERE " . $where1 . " AND rowNum > " . $requestData['start'] . " AND rowNum <= " . $requestData['start'] . " + " . $requestData['length'] . "";
 	$params = array();
 	$options = array("Scrollable" => SQLSRV_CURSOR_KEYSET);
 	$query = sqlsrv_query($conn, $sql, $params, $options) or die("data.php: get PO3'" . $sql . "'");
@@ -222,13 +262,13 @@ while ($row = sqlsrv_fetch_array($query)) {
 		$action = ' ' . $approval . '
 						<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
 	} else {
-		if ($row["StatusDoc"] == 'Selesai') {
+		if ($row["StatusDoc"] == 'Close') {
 			$status = 'Menuggu Proses Approval IAC';
 			if ($store1 == 'IAC') {
 				if ($row['RemarksIAC'] == '') {
 					$status = 'Menuggu Proses Approval IAC';
 				} else {
-					$status = 'Selesai';
+					$status = 'Close';
 				}
 				$action = '<a title="Verifikasi Dokumen" class="badge badge-danger open-modal" data-id="' . $row["ID"] . '" data-code="' . $row["DocNum"] . '" data-remarks="' . $row["RemarksIAC"] . '"><b>Input Remaks</b></a>
 								<br>
@@ -237,7 +277,7 @@ while ($row = sqlsrv_fetch_array($query)) {
 				if ($row['RemarksIAC'] == '') {
 					$status = 'Menuggu Proses Approval IAC';
 				} else {
-					$status = 'Selesai';
+					$status = 'Close';
 				}
 				$action = '<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
 			}

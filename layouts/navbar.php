@@ -163,7 +163,7 @@
       }else if($_SESSION["role_id"] == '13'){
       ?>
 
-      <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
+      <li class="nav-item  <?php if($halaman == "listrequestassets") echo "active"; ?>">
         <a class="nav-link" href="listrequestassets.php"><b>Daftar Assets Barang </b></a>
       </li>
       <li class="nav-item  <?php if($halaman == "listapprovereturn") echo "active"; ?>">
@@ -193,7 +193,9 @@
       <?php
       }else if($_SESSION["role_id"] == '8' || $_SESSION["role_id"] == '9' || $_SESSION["role_id"] == '18'  ){
       ?>
-
+        <li class="nav-item  <?php if($halaman == "listrequestassets") echo "active"; ?>">
+        <a class="nav-link" href="listrequestassets.php"><b>Daftar Assets Barang </b></a>
+      </li>
         <li class="nav-item dropdown <?php if($halaman == "report") echo "active"; ?>">
         <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
         <b>Laporan</b>

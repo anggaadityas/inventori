@@ -41,6 +41,7 @@ $user =mysqli_fetch_array($stmt);
             $_SESSION["role_id"] = strtoupper($user['role_id']);
             $_SESSION["wadah_flag"] = strtoupper($user['wadah_flag']);
             $_SESSION["sfgConfig"] = strtoupper($user['sfgConfig']);
+            $_SESSION["am_id"] = strtoupper($user['am_id']);
             if($user['role_id'] =="1" OR $user['role_id'] =="2" OR $user['role_id'] =="3"  ){              
             header("Location: listrequesttbs.php");
             }else if($user['role_id'] =="6" ){    
