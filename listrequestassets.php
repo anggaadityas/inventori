@@ -89,6 +89,8 @@ include "layouts/navbar.php";
                                 <option value=''>-- Select Status --</option>
                                 <option value='Open'>Open</option>
                                 <option value='Close'>Close</option>
+                                <option value='Parsial Received'>Parsial Received</option>
+                                <option value='Not Received'>Not Received</option>
                                 <option value='Reject'>Reject</option>
                             </select>
                         </div>
@@ -190,8 +192,8 @@ include "layouts/navbar.php";
                         data: { id: id, remarks: remarks },
                         success: function (response) {
                             $('#approvalModal').modal('hide');
-                            Swal.fire('Sukses', 'Approval remarks berhasil disimpan!', 'success')
-                                .then(() => location.reload());
+                            Swal.fire('Sukses', 'Approval remarks berhasil disimpan!', 'success');
+                            $('#datatable').DataTable().ajax.reload();
                         },
                         error: function () {
                             Swal.fire('Error', 'Terjadi kesalahan saat mengirim data!', 'error');
@@ -234,7 +236,7 @@ include "layouts/navbar.php";
                         [0, "desc"]
                     ],
                     "createdRow": function (row, data, dataIndex) {
-                        if (data[10] == '<span class="badge badge-success">Selesai</span>') {
+                        if (data[9] == 'Close') {
                             $(row).css('background-color', '#FFF');
                         } else {
                             $(row).css('background-color', '#F39B9B');

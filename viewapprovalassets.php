@@ -152,6 +152,10 @@ include "layouts/navbar.php";
                 }
                 // echo $sqldetail;
                 ?>
+                
+                <strong> <span style="font-size: 15px;">* Untuk Melakukan Persetujuan, Silahkan Checklist Per Item,  <br>
+                    Jika Item Tidak Disetujui Tidak Perlu Checklist Item & Silahkan Isi Keterangan Di Item Yang Tidak Disetujui</span><br>
+                <br></strong>
 
                 <div style="overflow-x:auto;">
                     <table style="width: 100%;" border="1" cellpadding="5">
@@ -180,6 +184,21 @@ include "layouts/navbar.php";
                         <tbody>
                             <?php while ($item = sqlsrv_fetch_array($stmtdetail, SQLSRV_FETCH_ASSOC)): ?>
                                 <tr>
+                                    <?php if ($rowheader['ApprovalProgress'] == 3) { ?>
+                                    <td>
+                                        <input type="checkbox" class="check-item"
+                                            name="check_item[<?php echo $item['ItemCode']; ?>]"
+                                            data-status-id="status_<?php echo $item['ItemCode']; ?>"
+                                            onchange="updateStatus('<?php echo $item['ItemCode']; ?>')" checked>
+
+                                        <input type="hidden" name="status_item[<?php echo $item['ItemCode']; ?>]"
+                                            id="status_<?php echo $item['ItemCode']; ?>" value="1">
+                                        <!-- Default: Not Approve -->
+                                        <input type="hidden" name="ID[<?php echo $item['ItemCode']; ?>]"
+                                            id="ID_<?php echo $item['ItemCode']; ?>" value="<?php echo $item['ID']; ?>">
+                                    </td>
+                                <?php } else { ?>
+
                                     <td>
                                         <input type="checkbox" class="check-item"
                                             name="check_item[<?php echo $item['ItemCode']; ?>]"
@@ -192,6 +211,9 @@ include "layouts/navbar.php";
                                         <input type="hidden" name="ID[<?php echo $item['ItemCode']; ?>]"
                                             id="ID_<?php echo $item['ItemCode']; ?>" value="<?php echo $item['ID']; ?>">
                                     </td>
+                                    <?php 
+                                    }
+                                    ?>
                                     <td><b><?php echo $item['ItemCode']; ?></b></td>
                                     <td><?php echo $item['ItemName']; ?></td>
                                     <td><?php echo $item['ItemUom']; ?></td>
@@ -382,7 +404,7 @@ include "layouts/navbar.php";
                         Swal.fire({
                             icon: 'error',
                             title: 'Qty Verifikasi Tidak Valid',
-                            text: `Qty Verifikasi untuk item ${itemCode} tidak boleh lebih  dari qty permintaan (${qtyPermintaan}).`
+                            text: `Qty Verifikasi untuk item ${itemCode} tidak boleh lebih dari qty permintaan (${qtyPermintaan}).`
                         });
 
                         qtyVerifikasiInput.focus();
@@ -390,7 +412,29 @@ include "layouts/navbar.php";
                         return false;
                     } else {
                         qtyVerifikasiInput.css('border', '');
+
+                        if (qtyVerifikasi == 0) {
+                                let remarksInput = $(`#RemarksItemApproval_${itemCode}`);
+                                let remarks = remarksInput.val().trim();
+
+                                if (remarks === "") {
+                                    remarksInput.css('border', '2px solid red');
+
+                                    Swal.fire({
+                                        icon: 'warning',
+                                        title: 'Keterangan Wajib Diisi',
+                                        text: `Qty Verifikasi untuk item ${itemCode} adalah 0, maka keterangan harus diisi.`
+                                    });
+
+                                    remarksInput.focus();
+                                    valid = false;
+                                    return false;
+                                } else {
+                                    remarksInput.css('border', '');
+                                }
+                            }
                     }
+
                 });
 
                 if (!valid) return;

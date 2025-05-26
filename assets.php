@@ -153,34 +153,60 @@ include "layouts/navbar.php";
                                         maxlength="110"></textarea>
                                 </div>
                             </div>
+
+                            <div id="uploadtemplatestoreclosing" style="display: none;">
+
+                                <div class="form-group row">
+                                    <label class="col-sm-2 col-form-label">Upload dari Template Excel?</label>
+                                    <div class="col-sm-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" id="uploadTemplateCheckbox">
+                                            <label class="form-check-label" for="uploadTemplateCheckbox">
+                                                Checklist untuk upload file
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Upload Excel (disembunyikan awalnya) -->
+                                <div class="form-group row" id="uploadExcelDiv" style="display: none;">
+                                    <label class="col-sm-2 col-form-label">Upload File Excel</label>
+                                    <div class="col-sm-3">
+                                        <input type="file" name="excel_file" id="excel_file" class="form-control"
+                                            accept=".xlsx,.xls">
+                                    </div>
+                                </div>
+
+                            </div>
+
                         </fieldset>
 
                         <br><br>
-                        <button type="button" class="btn btn-primary addmore1" id="openItemModal"><b>Tambah
-                                Barang</b></button>
-                        <br><br>
+                        <div id="tableInputDiv">
+                            <button type="button" class="btn btn-primary addmore1" id="openItemModal"><b>Tambah
+                                    Barang</b></button>
+                            <br><br>
 
 
-                        <table class="table table-striped table-bordered dt-responsive nowrap" id="itemTable">
-                            <thead>
-                                <tr>
-                                    <th>No</th>
-                                    <th style="width: 15%;">Nama Asset</th>
-                                    <th style="width: 12%;">Kode Asset</th>
-                                    <th style="width: 8%;">Satuan</th>
-                                    <th style="width: 10%;">Stok Asset</th>
-                                    <th style="width: 8%;">Jumlah</th>
-                                    <th style="width: 10%;">Alasan</th>
-                                    <th style="width: 12%;">Kondisi Asset</th>
-                                    <th style="width: 15%;">Keterangan Asset</th>
-                                    <th style="width: 10%;">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            </tbody>
-                        </table>
-
-
+                            <table class="table table-striped table-bordered dt-responsive nowrap" id="itemTable">
+                                <thead>
+                                    <tr>
+                                        <th>No</th>
+                                        <th style="width: 15%;">Nama Asset</th>
+                                        <th style="width: 12%;">Kode Asset</th>
+                                        <th style="width: 8%;">Satuan</th>
+                                        <th style="width: 10%;">Stok Asset</th>
+                                        <th style="width: 8%;">Jumlah</th>
+                                        <th style="width: 10%;">Alasan</th>
+                                        <th style="width: 12%;">Kondisi Asset</th>
+                                        <th style="width: 15%;">Keterangan Asset</th>
+                                        <th style="width: 10%;">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
 
                         <div align="left">
                             <br>
@@ -254,6 +280,31 @@ include "layouts/navbar.php";
         <script>
 
             $(document).ready(function () {
+                $('#uploadTemplateCheckbox').change(function () {
+                    if ($(this).is(':checked')) {
+                        // Kalau checkbox dicentang
+                        $('#uploadExcelDiv').show();
+                        $('#tableInputDiv').hide();
+                    } else {
+                        // Kalau checkbox tidak dicentang
+                        $('#uploadExcelDiv').hide();
+                        $('#tableInputDiv').show();
+                    }
+                });
+
+                $('#terms').on('change', function () {
+                    let selected = $(this).val();
+                    let termsOptions = '';
+                    if (selected === 'Store Closing') {
+                        $('#uploadtemplatestoreclosing').show();
+                    } else {
+                        $('#uploadtemplatestoreclosing').hide();
+                    }
+                });
+
+            });
+
+            $(document).ready(function () {
                 $(".store").hide();
                 $('#jenis_permintaan').on('change', function () {
                     var jenisPermintaan = $(this).val();
@@ -280,6 +331,7 @@ include "layouts/navbar.php";
                     } else if (selected === '2') {
                         // Store To Store
                         termsOptions += '<option value="Transfer Antar Store">Transfer Antar Store</option>';
+                        termsOptions += '<option value="Store Closing">Store Closing</option>';
                     } else if (selected === '3') {
                         // Store To Warehouse
                         termsOptions += '<option value="Retur">Retur</option>';
@@ -329,13 +381,17 @@ include "layouts/navbar.php";
                             "data": null,
                             "orderable": false,
                             "render": function (data) {
-                                return `<input type='checkbox' class='item-checkbox'
-                                 data-code='${data.ItemCode}'
-                                 data-name='${data.ItemName}'
-                                 data-uom='${data.ItemUom}'
-                                 data-AssetQuantity='${data.AssetQuantity}'
-                                 data-AssetConditionOk='${data.AssetConditionOk}'
-                                 data-AssetConditionNonOk='${data.AssetConditionNonOk}'>`;
+                                if (data.TransFlag == 0) {
+                                    return `<input type='checkbox' class='item-checkbox'
+                                    data-code='${data.ItemCode}'
+                                    data-name='${data.ItemName}'
+                                    data-uom='${data.ItemUom}'
+                                    data-AssetQuantity='${data.AssetQuantity}'
+                                    data-AssetConditionOk='${data.AssetConditionOk}'
+                                    data-AssetConditionNonOk='${data.AssetConditionNonOk}'>`;
+                                }else{
+                                    return '';
+                                }
                             }
                         },
                         { "data": "Warehouse" },
@@ -576,9 +632,6 @@ include "layouts/navbar.php";
 
                             });
 
-
-
-
                     });
 
                     $('#itemModal').modal('hide');
@@ -633,8 +686,11 @@ include "layouts/navbar.php";
                     }
                 });
 
-                // Cek apakah tabel memiliki setidaknya satu baris data
-                if ($("#itemTable tbody tr").length === 0) {
+                // Cek apakah upload excel dicentang
+                let isUploadExcel = $("#uploadTemplateCheckbox").is(":checked");
+
+                // Kalau BUKAN upload Excel, baru cek tabel harus minimal 1 row
+                if (!isUploadExcel && $("#itemTable tbody tr").length === 0) {
                     isValid = false;
                     errorMessage = "Harap tambahkan setidaknya satu barang dalam tabel.";
                 }
@@ -647,7 +703,7 @@ include "layouts/navbar.php";
                 return isValid;
             }
 
-            // Modifikasi event submit dengan validasi tambahan
+
             $(document).on("submit", "#myForm", function (e) {
                 e.preventDefault();
 
@@ -664,10 +720,12 @@ include "layouts/navbar.php";
                     },
                 });
 
-                $.ajax({
-                    url: "assetsproses.php",
+                // Cek apakah checklist upload Excel dicentang
+                let isUploadExcel = $("#uploadTemplateCheckbox").is(":checked");
+
+                let formData;
+                let ajaxOptions = {
                     type: "POST",
-                    data: $(this).serialize(),
                     dataType: "json",
                     success: function (response) {
                         if (response.success) {
@@ -681,15 +739,18 @@ include "layouts/navbar.php";
                                 icon: "success",
                                 title: "Data Berhasil Disimpan!",
                                 html: `
-                    <p>Dokumen yang tergenerate:</p>
-                    ${detailList}
-                `,
+                        <p>Dokumen yang tergenerate:</p>
+                        ${detailList}
+                    `,
                                 confirmButtonText: "OK"
                             });
 
                             // Reset form jika perlu
                             $("#myForm")[0].reset();
                             $("#itemTable tbody").empty();
+                            $("#uploadExcelDiv").hide();
+                            $("#tableInputDiv").show();
+
                         } else {
                             Swal.fire({
                                 icon: "error",
@@ -705,10 +766,26 @@ include "layouts/navbar.php";
                             text: "Terjadi kesalahan saat menghubungi server.",
                         });
                     }
-                });
+                };
 
+                if (isUploadExcel) {
+                    // Kalau pakai Upload Excel
+                    formData = new FormData(this);
+
+                    ajaxOptions.url = "assetsproses1.php";
+                    ajaxOptions.data = formData;
+                    ajaxOptions.processData = false;
+                    ajaxOptions.contentType = false;
+                } else {
+                    // Kalau pakai input manual table
+                    formData = $(this).serialize();
+
+                    ajaxOptions.url = "assetsproses.php";
+                    ajaxOptions.data = formData;
+                }
+
+                $.ajax(ajaxOptions);
             });
-
 
         </script>
         </body>

@@ -276,6 +276,14 @@ try {
                 throw new Exception(print_r(sqlsrv_errors(), true));
             }
 
+            $sqlUpdateMaster = "UPDATE MasterAssets SET TransFlag = 1 WHERE ItemCode = ? AND Warehouse =?";
+            $paramsUpdate = [$item['itemCode'],$group['warehouse']];
+            $stmtUpdate = sqlsrv_query($conn, $sqlUpdateMaster, $paramsUpdate);
+            if ($stmtUpdate === false) {
+                sqlsrv_rollback($conn);
+                throw new Exception("Gagal update MasterAssets: " . print_r(sqlsrv_errors(), true));
+            }
+
         }
         $generatedDocs[] = [
             'docNum' => $docNum,
@@ -339,32 +347,32 @@ try {
         }
 
         // === Insert Approval Distribusi ===
-        $sqlApprovalDistribusi = "
-        INSERT INTO InventoriApprovalAsset 
-            (TransID, DocTrans, UserIDApproval, UserNameApproval, StatusApproval, CreatedBy, ApprovalStep)
-        VALUES (?, ?, ?, ?, ?, ?, ?)";
+        // $sqlApprovalDistribusi = "
+        // INSERT INTO InventoriApprovalAsset 
+        //     (TransID, DocTrans, UserIDApproval, UserNameApproval, StatusApproval, CreatedBy, ApprovalStep)
+        // VALUES (?, ?, ?, ?, ?, ?, ?)";
 
-        $paramsDistribusi = [
-            $transID,
-            $jenisPermintaan,
-            $userid_distribusick,
-            $distribusi_area,
-            'Menunggu Approval Distribusi',
-            $createdBy,
-            3
-        ];
+        // $paramsDistribusi = [
+        //     $transID,
+        //     $jenisPermintaan,
+        //     $userid_distribusick,
+        //     $distribusi_area,
+        //     'Menunggu Approval Distribusi',
+        //     $createdBy,
+        //     3
+        // ];
 
-        $stmtApprovalDistribusi = sqlsrv_query($conn, $sqlApprovalDistribusi, $paramsDistribusi);
-        if ($stmtApprovalDistribusi === false) {
-            sqlsrv_rollback($conn);
-            $errors = sqlsrv_errors();
-            echo json_encode([
-                "status" => "error",
-                "message" => "Gagal menyimpan approval Distribusi.",
-                "errors" => $errors
-            ]);
-            exit;
-        }
+        // $stmtApprovalDistribusi = sqlsrv_query($conn, $sqlApprovalDistribusi, $paramsDistribusi);
+        // if ($stmtApprovalDistribusi === false) {
+        //     sqlsrv_rollback($conn);
+        //     $errors = sqlsrv_errors();
+        //     echo json_encode([
+        //         "status" => "error",
+        //         "message" => "Gagal menyimpan approval Distribusi.",
+        //         "errors" => $errors
+        //     ]);
+        //     exit;
+        // }
 
         // === Tentukan user approval WH ===
         if ($jenisPermintaan == 3) {
@@ -411,7 +419,7 @@ try {
             $userNameApproval,
             'Menunggu Verifikasi Warehouse',
             $createdBy,
-            4
+            3
         ];
 
         $stmtApprovalWH = sqlsrv_query($conn, $sqlApprovalWH, $paramsApprovalWH);

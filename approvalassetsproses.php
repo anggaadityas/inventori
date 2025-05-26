@@ -37,6 +37,40 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $StoreCode = $_POST['WarehouseFrom'] ?? null;
     $WarehouseTo = $_POST['WarehouseTo'] ?? null;
 
+    $sqlheader = "SELECT a.ID,
+        a.DocNum,
+		convert(char(10),a.DocDate,126) DocDate,
+        a.WarehouseFrom,
+        a.WarehouseTo,
+        b.TransName,
+        a.TermsAsset,
+         CASE
+    WHEN a.DocPriority=1 THEN 'Normal'
+    WHEN a.DocPriority=2 THEN 'Darurat'
+    ELSE ''
+	END as DocPriority,
+        a.Remarks,
+        a.ApprovalUser,
+        a.ApprovalProgress,
+		a.ApprovalStatus,
+		a.StatusDoc,
+        c.Qty_Pengirim,
+        c.Qty_Penerima,
+        ABS(c.Qty_Penerima - c.Qty_Pengirim) AS selisih_item,
+        convert(char(20),a.CreatedDate,120) date_submit 
+        FROM InventoriAssetHeader a
+        inner join MasterDocTrans b on a.DocTrans=b.ID
+         LEFT JOIN (
+          SELECT TransID,SUM(Quantity) AS Qty_Pengirim,SUM(ISNULL(QuantityVer,0)) AS Qty_Penerima FROM InventoriAssetDetail 
+          GROUP BY TransID 
+      ) C on a.ID=c.TransID
+        where a.ID='$TransID'";
+    $stmtheader = sqlsrv_query($conn, $sqlheader);
+    if ($stmtheader === false) {
+        die(print_r(sqlsrv_errors(), true));
+    }
+    $rowheader = sqlsrv_fetch_array($stmtheader, SQLSRV_FETCH_ASSOC);
+
     if ($rev_question == 1) {
         $fixDocDate = $revDocDate;
         $fixDocPastDate = $DocDate;
@@ -254,9 +288,54 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     try {
                         if ($totalSteps == $doneSteps) {
+
+                            $sqlcekselisih = "SELECT a.ID,
+                                a.DocNum,
+                                convert(char(10),a.DocDate,126) DocDate,
+                                a.WarehouseFrom,
+                                a.WarehouseTo,
+                                b.TransName,
+                                a.TermsAsset,
+                                CASE
+                                WHEN a.DocPriority=1 THEN 'Normal'
+                                WHEN a.DocPriority=2 THEN 'Darurat'
+                                ELSE ''
+                                END as DocPriority,
+                                a.Remarks,
+                                a.ApprovalUser,
+                                a.ApprovalProgress,
+                                a.ApprovalStatus,
+                                a.StatusDoc,
+                                c.Qty_Pengirim,
+                                c.Qty_Penerima,
+                                ABS(c.Qty_Penerima - c.Qty_Pengirim) AS selisih_item,
+                                convert(char(20),a.CreatedDate,120) date_submit 
+                                FROM InventoriAssetHeader a
+                                inner join MasterDocTrans b on a.DocTrans=b.ID
+                                LEFT JOIN (
+                                    SELECT TransID,SUM(Quantity) AS Qty_Pengirim,SUM(ISNULL(QuantityVer,0)) AS Qty_Penerima FROM InventoriAssetDetail 
+                                    GROUP BY TransID 
+                                ) C on a.ID=c.TransID
+                             where a.ID='$TransID'";
+                            $stmtselisih = sqlsrv_query($conn, $sqlcekselisih);
+                            if ($stmtselisih === false) {
+                                die(print_r(sqlsrv_errors(), true));
+                            }
+                            $rowselisih = sqlsrv_fetch_array($stmtselisih, SQLSRV_FETCH_ASSOC);
+
+                            if ($rowselisih['selisih_item'] == 0) {
+                                $statusdoc = 'Close';
+                            } else if ($rowselisih['selisih_item'] == $rowselisih['Qty_Pengirim'] ) {
+                                $statusdoc = 'Not Received';
+                            } else if ($rowselisih['selisih_item'] < $rowselisih['Qty_Pengirim']) {
+                                $statusdoc = 'Parsial Received';
+                            } else {
+                                $statusdoc = NULL;
+                            }
+
                             // Update the header status
-                            $sqlUpdateHeader = "UPDATE InventoriAssetHeader SET ApprovalUser=NULL, ApprovalUserName=NULL, ApprovalStatus = 'Close', ApprovalProgress=4, StatusDoc='Close' WHERE ID = ?";
-                            $updateHeaderResult = sqlsrv_query($conn, $sqlUpdateHeader, [$TransID]);
+                            $sqlUpdateHeader = "UPDATE InventoriAssetHeader SET ApprovalUser=NULL, ApprovalUserName=NULL, ApprovalStatus = 'Close', ApprovalProgress=4, StatusDoc= ? WHERE ID = ?";
+                            $updateHeaderResult = sqlsrv_query($conn, $sqlUpdateHeader, [$statusdoc, $TransID]);
 
                             if ($updateHeaderResult === false) {
                                 throw new Exception("Error updating InventoriAssetHeader: " . print_r(sqlsrv_errors(), true));
@@ -286,6 +365,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 $AssetConditionNonOK = $row['AssetConditionNonOK'];
                                 $CreatedBy = 'AutoSystem'; // Bisa ganti dengan session login
                                 $Now = date('Y-m-d H:i:s');
+
+                                $sqlUpdateMaster = "UPDATE MasterAssets SET TransFlag = 0 WHERE ItemCode = ? AND Warehouse =?";
+                                $paramsUpdate = [$ItemCode, $WarehouseFrom];
+                                $stmtUpdate = sqlsrv_query($conn, $sqlUpdateMaster, $paramsUpdate);
+                                if ($stmtUpdate === false) {
+                                    sqlsrv_rollback($conn);
+                                    throw new Exception("Gagal update MasterAssets: " . print_r(sqlsrv_errors(), true));
+                                }
 
                                 // Insert into MasterAssetLog
                                 $sqlInsertLog = "INSERT INTO MasterAssetLogs (ItemType, ItemCode, ItemName, ItemUom, AssetQuantity, CreatedDate, CreatedBy, IsActive, WarehouseFrom, WarehouseTo, DocTrans, TypeTrans, RemarksTrans, DateTrans) 

@@ -1,6 +1,6 @@
 <?php
 include "layouts/header.php";
-// error_reporting(0);
+error_reporting(0);
 $id = $_GET['id'];
 $sqlheader = "SELECT a.ID,
         a.DocNum,
@@ -19,9 +19,16 @@ $sqlheader = "SELECT a.ID,
         a.ApprovalProgress,
 		a.ApprovalStatus,
 		a.StatusDoc,
+        c.Qty_Pengirim,
+        c.Qty_Penerima,
+        c.Qty_Penerima - c.Qty_Pengirim AS selisih_item,
         convert(char(20),a.CreatedDate,120) date_submit 
         FROM InventoriAssetHeader a
         inner join MasterDocTrans b on a.DocTrans=b.ID
+         LEFT JOIN (
+          SELECT TransID,SUM(Quantity) AS Qty_Pengirim,SUM(ISNULL(QuantityVer,0)) AS Qty_Penerima FROM InventoriAssetDetail 
+          GROUP BY TransID 
+      ) C on a.ID=c.TransID
         where a.ID='$id'";
 $stmtheader = sqlsrv_query($conn, $sqlheader);
 if ($stmtheader === false) {
@@ -157,6 +164,10 @@ include "layouts/navbar.php";
 
                 <p><b>Cetak Surat Jalan : </b></p>
                 <?php
+                if($rowheader['ApprovalProgress'] > 2) {
+                ?>
+
+                <?php
                 $sqlcat = "SELECT DISTINCT WarehouseTo FROM InventoriAssetDetail WHERE TransID='$id' AND StatusApprovalAM=1
                     GROUP BY WarehouseTo
                 ";
@@ -176,6 +187,7 @@ include "layouts/navbar.php";
 
                         <?php
                 }
+            }
                 ?>
 
                     <br>
@@ -231,8 +243,10 @@ include "layouts/navbar.php";
                                     <th>Satuan</th>
                                     <th>Alasan</th>
                                     <th>Kondisi Asset</th>
-                                    <th>Qty</th>
+                                    <th>Qty Pengiriman</th>
+                                    <th>Qty Penerimaan</th>
                                     <th>Warehouse Tujuan</th>
+                                    <th>Keterangan Barang</th>
                                     <th>Status Approval AM</th>
                                     <th>Status Approval Distribusi</th>
                                 </tr>
@@ -253,7 +267,7 @@ include "layouts/navbar.php";
                                     </td>
                                     <td>
                                         <?php foreach ($values as $item)
-                                            echo $item['Remarks'] . '<br/><hr>'; ?>
+                                            echo $item['Reason'] . '<br/><hr>'; ?>
                                     </td>
                                     <td>
                                         <?php foreach ($values as $item)
@@ -265,7 +279,15 @@ include "layouts/navbar.php";
                                     </td>
                                     <td>
                                         <?php foreach ($values as $item)
+                                            echo number_format($item['QuantityVer'], 2, '.', ',') . '<br/><hr>'; ?>
+                                    </td>
+                                    <td>
+                                        <?php foreach ($values as $item)
                                             echo $item['WarehouseTo'] . '<br/><hr>'; ?>
+                                    </td>
+                                    <td>
+                                        <?php foreach ($values as $item)
+                                            echo $item['Remarks'] . '<br/><hr>'; ?>
                                     </td>
                                     <td>
                                         <?php foreach ($values as $item)

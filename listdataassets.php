@@ -35,9 +35,15 @@ if ($requestData['searchByStatusDokumen'] == '') {
 }
 
 
-if ($area_div == 'RM' or $area_div == 'PROJECT' or $area_div == 'CK JAKARTA' or $area_div == 'CK SURABAYA' or $area_div == 'IT JAKARTA' or $area_div == 'IT SURABAYA' or $area_div == 'GA JAKARTA' or $area_div == 'GA SURABAYA' or $area_div == 'ENG JAKARTA' or $area_div == 'ENG SURABAYA' or $area_div == 'IAC') {
+if ($area_div == 'RM' or $area_div == 'PROJECT' or $area_div == 'CK JAKARTA' or $area_div == 'CK SURABAYA' or $area_div == 'IT JAKARTA' or $area_div == 'IT SURABAYA' or $area_div == 'GA JAKARTA' or $area_div == 'GA SURABAYA' or $area_div == 'ENG JAKARTA' or $area_div == 'ENG SURABAYA') {
 	$where = "WHERE (WarehouseFrom is not null or WarehouseFrom='')";
 	$where1 = " UserNameApprovalList  LIKE '%" . $_SESSION['nama'] . "%'  ";
+	$filter = "WHERE  (WarehouseFrom is not null or WarehouseFrom='') AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
+	$filter1 = "WHERE  (WarehouseFrom is not null or WarehouseFrom='')  " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
+	$orderby = "ORDER BY a.ID desc";
+} else if ($area_div == 'IAC') {
+	$where = "WHERE (WarehouseFrom is not null or WarehouseFrom='')";
+	$where1 = " UserNameApprovalList  IS NOT NULL";
 	$filter = "WHERE  (WarehouseFrom is not null or WarehouseFrom='') AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
 	$filter1 = "WHERE  (WarehouseFrom is not null or WarehouseFrom='')  " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
 	$orderby = "ORDER BY a.ID desc";
@@ -101,8 +107,15 @@ FROM
                 FOR XML PATH(''), TYPE
             ).value('.', 'NVARCHAR(MAX)'), 1, 3, '')
         ) AS UserNameApprovalList,
+		c.Qty_Pengirim,
+        c.Qty_Penerima,
+        ABS(c.Qty_Penerima - c.Qty_Pengirim) AS selisih_item,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
-      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
+      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID
+	  LEFT JOIN (
+          SELECT TransID,SUM(Quantity) AS Qty_Pengirim,SUM(ISNULL(QuantityVer,0)) AS Qty_Penerima FROM InventoriAssetDetail 
+          GROUP BY TransID 
+      ) C on a.ID=c.TransID";
 $sql .= " " . $where . "";
 $sql .= ") sub WHERE " . $where1 . "";
 $params = array();
@@ -143,8 +156,15 @@ FROM
                 FOR XML PATH(''), TYPE
             ).value('.', 'NVARCHAR(MAX)'), 1, 3, '')
         ) AS UserNameApprovalList,
+		c.Qty_Pengirim,
+        c.Qty_Penerima,
+        ABS(c.Qty_Penerima - c.Qty_Pengirim) AS selisih_item,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
-      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
+      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID
+	  LEFT JOIN (
+          SELECT TransID,SUM(Quantity) AS Qty_Pengirim,SUM(ISNULL(QuantityVer,0)) AS Qty_Penerima FROM InventoriAssetDetail 
+          GROUP BY TransID 
+      ) C on a.ID=c.TransID";
 	$sql .= " " . $filter . "";
 	$sql .= ") sub ";
 	$params = array();
@@ -189,8 +209,15 @@ FROM
                 FOR XML PATH(''), TYPE
             ).value('.', 'NVARCHAR(MAX)'), 1, 3, '')
         ) AS UserNameApprovalList,
+		c.Qty_Pengirim,
+        c.Qty_Penerima,
+        ABS(c.Qty_Penerima - c.Qty_Pengirim) AS selisih_item,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
-      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
+      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID
+	  LEFT JOIN (
+          SELECT TransID,SUM(Quantity) AS Qty_Pengirim,SUM(ISNULL(QuantityVer,0)) AS Qty_Penerima FROM InventoriAssetDetail 
+          GROUP BY TransID 
+      ) C on a.ID=c.TransID";
 	$sql .= " " . $filter1 . "";
 	$sql .= ") sub ";
 	$params = array();
@@ -235,8 +262,15 @@ FROM
                 FOR XML PATH(''), TYPE
             ).value('.', 'NVARCHAR(MAX)'), 1, 3, '')
         ) AS UserNameApprovalList,
+		c.Qty_Pengirim,
+        c.Qty_Penerima,
+        ABS(c.Qty_Penerima - c.Qty_Pengirim) AS selisih_item,
         ROW_NUMBER() OVER (ORDER BY a.ID DESC) as rowNum 
-      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID";
+      FROM InventoriAssetHeader a inner join MasterDocTrans b on a.DocTrans=b.ID
+	  LEFT JOIN (
+          SELECT TransID,SUM(Quantity) AS Qty_Pengirim,SUM(ISNULL(QuantityVer,0)) AS Qty_Penerima FROM InventoriAssetDetail 
+          GROUP BY TransID 
+      ) C on a.ID=c.TransID";
 	$sql .= " " . $where . "";
 	$sql .= ") sub ";
 	$sql .= " WHERE " . $where1 . " AND rowNum > " . $requestData['start'] . " AND rowNum <= " . $requestData['start'] . " + " . $requestData['length'] . "";
@@ -262,7 +296,7 @@ while ($row = sqlsrv_fetch_array($query)) {
 		$action = ' ' . $approval . '
 						<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
 	} else {
-		if ($row["StatusDoc"] == 'Close') {
+		if ($row["StatusDoc"] == 'Parsial Received' || $row["StatusDoc"] == 'Close' ) {
 			$status = 'Menuggu Proses Approval IAC';
 			if ($store1 == 'IAC') {
 				if ($row['RemarksIAC'] == '') {
@@ -297,7 +331,10 @@ while ($row = sqlsrv_fetch_array($query)) {
 	$nestedData[] = $row["Remarks"];
 	$nestedData[] = $row["RemarksIAC"];
 	$nestedData[] = $status;
-	$nestedData[] = $action;
+	$nestedData[] = $action .
+    '<br> <span style="font-size:12px;"><strong>Qty Pengiriman :</strong> ' . $row["Qty_Pengirim"] . '</span>
+    <br><span style="font-size:12px;"><strong>Qty Penerimaan :</strong> ' . $row["Qty_Penerima"] . '</span>
+    <br><span style="font-size:12px;"><strong>Selisih Item :</strong> ' . $row["selisih_item"] . '</span>';
 	$data[] = $nestedData;
 
 }
