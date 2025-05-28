@@ -203,7 +203,7 @@ li {list-style-type:none;}
 <p>Diverifikasi Oleh,</p>
 <br><br<><br><br>
 <p class="text-muted">.......................................................</p>
-<p> Crew Retur / Leader WH CK</p>
+<p> '.$warehouse.' </p>
 </div>
 </td>
      

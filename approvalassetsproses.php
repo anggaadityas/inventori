@@ -194,12 +194,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     FROM InventoriAssetDetail 
                     WHERE TransID = ? AND StatusApprovalAM=1";
             } else if ($approvalProgress >= 3) {
-                $sqlCheckAll = "SELECT 
-                        COUNT(*) AS total, 
-                        SUM(CASE WHEN StatusApprovalWarehouse = 1 THEN 1 ELSE 0 END) AS approved,
-                        SUM(CASE WHEN StatusApprovalWarehouse = 0 THEN 1 ELSE 0 END) AS rejected
-                    FROM InventoriAssetDetail 
-                    WHERE TransID = ? AND StatusApprovalAM=1 AND StatusApprovalDistribusi=1";
+                    if($TransName == 'Warehouse To Store'){
+                    $sqlCheckAll = "SELECT 
+                            COUNT(*) AS total, 
+                            SUM(CASE WHEN StatusApprovalWarehouse = 1 THEN 1 ELSE 0 END) AS approved,
+                            SUM(CASE WHEN StatusApprovalWarehouse = 0 THEN 1 ELSE 0 END) AS rejected
+                        FROM InventoriAssetDetail 
+                        WHERE TransID = ?";
+                    }else{
+                    $sqlCheckAll = "SELECT 
+                            COUNT(*) AS total, 
+                            SUM(CASE WHEN StatusApprovalWarehouse = 1 THEN 1 ELSE 0 END) AS approved,
+                            SUM(CASE WHEN StatusApprovalWarehouse = 0 THEN 1 ELSE 0 END) AS rejected
+                        FROM InventoriAssetDetail 
+                        WHERE TransID = ? AND StatusApprovalAM=1 AND StatusApprovalDistribusi=1";
+                    }
             }
             $stmtCheck = sqlsrv_query($conn, $sqlCheckAll, [$TransID]);
             $rowCheck = sqlsrv_fetch_array($stmtCheck, SQLSRV_FETCH_ASSOC);
@@ -325,7 +334,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                             if ($rowselisih['selisih_item'] == 0) {
                                 $statusdoc = 'Close';
-                            } else if ($rowselisih['selisih_item'] == $rowselisih['Qty_Pengirim'] ) {
+                            } else if ($rowselisih['selisih_item'] == $rowselisih['Qty_Pengirim']) {
                                 $statusdoc = 'Not Received';
                             } else if ($rowselisih['selisih_item'] < $rowselisih['Qty_Pengirim']) {
                                 $statusdoc = 'Parsial Received';
@@ -604,6 +613,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     if ($stmtUpdate === false) {
                         die(print_r(sqlsrv_errors(), true)); // Menampilkan error jika query gagal
                     }
+
+                    // Fetch items from the transaction detail
+                            $sqlItems = "SELECT A.ItemCode, A.ItemName, A.ItemUom, A.Quantity, A.WarehouseTo,B.TermsRetur,B.TermsStoreClosing
+                            ,B.AssetConditionOK,B.AssetConditionNonOK FROM InventoriAssetDetail A
+                            LEFT JOIN MasterAssets B ON A.ItemCode = B.ItemCode
+                             WHERE TransID = ?  AND B.Warehouse= ? AND ISNULL(StatusApprovalAM,0) = 0 AND ISNULL(StatusApprovalDistribusi,0) = 0";
+                            $stmtItems = sqlsrv_query($conn, $sqlItems, [$TransID, $StoreCode]);
+
+                            if ($stmtItems === false) {
+                                throw new Exception("Error fetching items from InventoriAssetDetail: " . print_r(sqlsrv_errors(), true));
+                            }
+
+                            while ($row = sqlsrv_fetch_array($stmtItems, SQLSRV_FETCH_ASSOC)) {
+                                $ItemCode = $row['ItemCode'];
+                                $WarehouseFrom = $StoreCode;
+
+                                $sqlUpdateMaster = "UPDATE MasterAssets SET TransFlag = 0 WHERE ItemCode = ? AND Warehouse =?";
+                                $paramsUpdate = [$ItemCode, $WarehouseFrom];
+                                $stmtUpdate = sqlsrv_query($conn, $sqlUpdateMaster, $paramsUpdate);
+
+                                if ($stmtUpdate === false) {
+                                    sqlsrv_rollback($conn);
+                                    throw new Exception("Gagal update MasterAssets: " . print_r(sqlsrv_errors(), true));
+                                    }
+                            }
 
                     // Insert log ke InventoriAssetLog
                     $sqlLog = "INSERT INTO InventoriAssetLog (TransID, DocProgress, Remarks, CreatedBy) 

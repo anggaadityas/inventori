@@ -34,6 +34,7 @@ $tsql = "SELECT * FROM mst_user a INNER JOIN mst_divisi b
 $stmt = mysqli_query($connmysl,$tsql);
 $useram =mysqli_fetch_array($stmt);
 
+
 try {
     $jenisPermintaan = $_POST['jenis_permintaan'];
     $jenisPrioritas = $_POST['jenis_prioritas'];
@@ -43,6 +44,7 @@ try {
     $createdBy = $_SESSION['nama'];
     $WarehouseTo = $_POST['WarehouseTo'];
 
+    $itemID = $_POST['ItemID'];
     $itemNames = $_POST['itemName'];
     $itemCodes = $_POST['itemCode'];
     $itemUoms = $_POST['itemUom'];
@@ -162,12 +164,28 @@ try {
     $proj_area = $rowck['PROJ'];
     $userid_proj = $rowck['iduserproj'];
 
+
+if($jenisPermintaan ==1){
+    $connmysl = mysqli_connect($servername, $username, $password, $dbname) or die("Connection failed: " . mysqli_connect_error());
+    $tsql = "SELECT * FROM mst_user a INNER JOIN mst_divisi b
+                on a.div_id=b.id_divisi WHERE a.nama= '$WarehouseTo'";   
+    $stmt = mysqli_query($connmysl,$tsql);
+    $userapproval =mysqli_fetch_array($stmt);
+    $amId = $userapproval['id_user'];
+    $amName = $userapproval['nama'];
+    $approvalstatus = "Menunggu Verifikasi Warehouse";
+    $approvalusername = $userapproval['nama'];
+    $approvalprogress = 3;
+} else {
     $amId = $useram['id_user'];
     $amName = $useram['nama'];
-    $approvalprogress = 1; // Status awal
     $approvalstatus = "Menunggu Approval AM";
-    $statusDoc = 'Open';
     $approvalusername = 'AM';
+    $approvalprogress = 1;
+}
+
+ // Status awal
+    $statusDoc = 'Open';
 
     $rmId = 367;
     $rmName = 'RM';
@@ -193,6 +211,7 @@ try {
         }
 
         $grouped[$groupKey]['items'][] = [
+            'itemID' => $itemID[$i],
             'itemCode' => $itemCodes[$i],
             'itemName' => $itemNames[$i],
             'itemUom' => $itemUoms[$i],
@@ -244,8 +263,8 @@ try {
         // Insert ke detail
         foreach ($group['items'] as $item) {
             $sqlDetail = "INSERT INTO InventoriAssetDetail 
-           (TransID, ItemCode, ItemName, ItemUom, Quantity, ConditionAsset, Reason,Remarks, WarehouseFrom,WarehouseTo,CreatedBy) 
-            VALUES (?,?,?,?,?,?,?,?,?,?,?);";
+           (TransID, ItemID,ItemCode, ItemName, ItemUom, Quantity, ConditionAsset, Reason,Remarks, WarehouseFrom,WarehouseTo,CreatedBy) 
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?);";
 
             if ($jenisPermintaan == 3) {
                 if ($group['warehouse'] == 'Project') {
@@ -259,6 +278,7 @@ try {
 
             $paramsDetail = [
                 $transID,
+                $item['itemID'],
                 $item['itemCode'],
                 $item['itemName'],
                 $item['itemUom'],
@@ -277,7 +297,11 @@ try {
             }
 
             $sqlUpdateMaster = "UPDATE MasterAssets SET TransFlag = 1 WHERE ItemCode = ? AND Warehouse =?";
-            $paramsUpdate = [$item['itemCode'],$group['warehouse']];
+            $paramsUpdate = [$item['itemCode'],$createdBy];
+
+            // echo "Update MasterAssets: " . $item['itemCode'] . " di " . $group['warehouse'] . "<br>";
+            // echo $sqlUpdateMaster . "<br>";
+
             $stmtUpdate = sqlsrv_query($conn, $sqlUpdateMaster, $paramsUpdate);
             if ($stmtUpdate === false) {
                 sqlsrv_rollback($conn);
@@ -289,6 +313,8 @@ try {
             'docNum' => $docNum,
             'warehouseTo' => $group['warehouse'] == 'Project' ? 'Project' : $group['warehouse'] . " " . $area
         ];
+
+     if (in_array($jenisPermintaan, [2, 3])) {
 
         // === Insert Approval AM ===
         $sqlApprovalAM = "
@@ -345,6 +371,7 @@ try {
             ]);
             exit;
         }
+    }
 
         // === Insert Approval Distribusi ===
         // $sqlApprovalDistribusi = "

@@ -61,10 +61,25 @@ include "layouts/navbar.php";
                                 <label for="inputPassword" class="col-sm-2 col-form-label">Jenis Asset</label>
                                 <div class="col-sm-3">
                                     <select name="jenis_permintaan" id="jenis_permintaan" class="form-control" required>
+                                        <?php
+                                        if($_SESSION["nama"] == 'IT JAKARTA' || 
+                                            $_SESSION["nama"] == 'IT SURABAYA' ||
+                                            $_SESSION["nama"] == 'ENG JAKARTA' ||
+                                            $_SESSION["nama"] == 'ENG SURABAYA' ||
+                                            $_SESSION["nama"] == 'CK JAKARTA' ||
+                                            $_SESSION["nama"] == 'CK SURABAYA'){
+                                        ?>
                                         <option value="">-- Pilih Jenis Asset --</option>
-                                        <!-- <option value="1">Warehouse To Store</option> -->
-                                        <option value="2">Store To Store</option>
-                                        <option value="3">Store To Warehouse</option>
+                                        <option value="1">Warehouse To Store</option>
+                                        <?php
+                                        } else {
+                                         ?>
+                                            <option value="">-- Pilih Jenis Asset --</option>
+                                            <option value="2">Store To Store</option>
+                                            <option value="3">Store To Warehouse</option>
+                                            <?php
+                                        }
+                                        ?>
                                     </select>
                                 </div>
                             </div>
@@ -242,7 +257,8 @@ include "layouts/navbar.php";
                             <thead>
                                 <tr>
                                     <th><input type="checkbox" id="select-all-items"> Select All</th>
-                                    <th>Warerhouse</th>
+                                    <th>Warehouse</th>
+                                    <th>ItemID</th>
                                     <th>Item Code</th>
                                     <th>Item Name</th>
                                     <th>UOM</th>
@@ -309,7 +325,7 @@ include "layouts/navbar.php";
                 $('#jenis_permintaan').on('change', function () {
                     var jenisPermintaan = $(this).val();
 
-                    if (jenisPermintaan == '2') {
+                    if (jenisPermintaan == '1' || jenisPermintaan == '2') {
                         $(".store").show();
                         $('#store').prop('required', true);
                     } else {
@@ -383,6 +399,7 @@ include "layouts/navbar.php";
                             "render": function (data) {
                                 if (data.TransFlag == 0) {
                                     return `<input type='checkbox' class='item-checkbox'
+                                    data-id='${data.ItemID}'
                                     data-code='${data.ItemCode}'
                                     data-name='${data.ItemName}'
                                     data-uom='${data.ItemUom}'
@@ -395,6 +412,7 @@ include "layouts/navbar.php";
                             }
                         },
                         { "data": "Warehouse" },
+                        { "data": "ItemID" },
                         { "data": "ItemCode" },
                         { "data": "ItemName" },
                         { "data": "ItemUom" },
@@ -421,6 +439,7 @@ include "layouts/navbar.php";
 
                 // Simpan item yang dipilih
                 $('#itemDataTable tbody').on('change', '.item-checkbox', function () {
+                    let ItemID = $(this).data('id');
                     let itemCode = $(this).data('code');
                     let itemName = $(this).data('name');
                     let itemUom = $(this).data('uom');
@@ -429,7 +448,7 @@ include "layouts/navbar.php";
                     let AssetConditionNonOk = $(this).data('assetconditionnonok');
 
                     if ($(this).is(':checked')) {
-                        selectedItems[itemCode] = { itemCode, itemName, itemUom, AssetQuantity, AssetConditionOk, AssetConditionNonOk };
+                        selectedItems[itemCode] = { ItemID,itemCode, itemName, itemUom, AssetQuantity, AssetConditionOk, AssetConditionNonOk };
                     } else {
                         delete selectedItems[itemCode];
                     }
@@ -552,6 +571,7 @@ include "layouts/navbar.php";
             <input type="hidden" name="AssetConditionOk[]" class="form-control" value="${item.AssetConditionOk}" readonly>
              <input type="hidden" name="AssetConditionNonOk[]" class="form-control" value="${item.AssetConditionNonOk}" readonly>
             <input type="text" name="itemName[]" class="form-control" value="${item.itemName}" readonly>
+             <input type="text" name="ItemID[]" class="form-control" value="${item.ItemID}" readonly>
             </td>
             <td><input type="text" name="itemCode[]" class="form-control" value="${item.itemCode}" readonly></td>
             <td><input type="text" name="itemUom[]" class="form-control" value="${item.itemUom}" readonly></td>
@@ -744,7 +764,7 @@ include "layouts/navbar.php";
                     `,
                                 confirmButtonText: "OK"
                             });
-
+                            // location.reload();
                             // Reset form jika perlu
                             $("#myForm")[0].reset();
                             $("#itemTable tbody").empty();

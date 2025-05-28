@@ -4,6 +4,7 @@ include "layouts/header.php";
 $id = $_GET['id'];
 $area_div=$_SESSION['area_div'];
 $sqlheader = "SELECT a.ID,
+        a.DocTrans,
         a.DocNum,
 		convert(char(10),a.DocDate,126) DocDate,
         a.WarehouseFrom,
@@ -134,7 +135,11 @@ include "layouts/navbar.php";
 
                 <?php
                 if ($rowheader['ApprovalStatus'] == 'Menunggu Verifikasi Warehouse') {
-                    $warehouseto = "AND WarehouseTo LIKE  '" . $name . "%' AND StatusApprovalAM=1 AND StatusApprovalDistribusi=1";
+                      if ($rowheader['DocTrans'] == 1) {
+                        $warehouseto ="";
+                      }else{
+                        $warehouseto = "AND WarehouseTo LIKE  '" . $name . "%' AND StatusApprovalAM=1 AND StatusApprovalDistribusi=1";
+                      }
                 } else {
                     $warehouseto = '';
                 }
@@ -142,7 +147,11 @@ include "layouts/navbar.php";
                 if ($area_div == 'AM') {
                     $am = '';
                 } else {
-                    $am = 'AND StatusApprovalAM=1';
+                    if ($rowheader['DocTrans'] == 1) {
+                        $am = '';
+                    } else {
+                       $am = 'AND StatusApprovalAM=1';
+                    }
                 }
 
                 $sqldetail = "SELECT * FROM InventoriAssetDetail WHERE TransID='$id' $am $warehouseto";
@@ -182,7 +191,13 @@ include "layouts/navbar.php";
                             </tr>
                         </thead>
                         <tbody>
-                            <?php while ($item = sqlsrv_fetch_array($stmtdetail, SQLSRV_FETCH_ASSOC)): ?>
+                            <?php while ($item = sqlsrv_fetch_array($stmtdetail, SQLSRV_FETCH_ASSOC)):
+                                if ($item['ConditionAsset'] == 0) {
+                                   $statusapproval ="Tidak Bagus";
+                                }else{
+                                    $statusapproval = "Bagus";
+                                }
+                                ?>
                                 <tr>
                                     <?php if ($rowheader['ApprovalProgress'] == 3) { ?>
                                     <td>
@@ -218,7 +233,9 @@ include "layouts/navbar.php";
                                     <td><?php echo $item['ItemName']; ?></td>
                                     <td><?php echo $item['ItemUom']; ?></td>
                                     <td><?php echo $item['Remarks']; ?></td>
-                                    <td><?php echo $item['ConditionAsset']; ?></td>
+                                    <td><?php echo $item['ConditionAsset']; ?>
+                                    
+                                    </td>
                                     <td><?php echo number_format($item['Quantity'], 2, '.', ','); ?></td>
 
                                     <?php

@@ -37,7 +37,7 @@ if ($requestData['searchByStatusDokumen'] == '') {
 
 if ($area_div == 'RM' or $area_div == 'PROJECT' or $area_div == 'CK JAKARTA' or $area_div == 'CK SURABAYA' or $area_div == 'IT JAKARTA' or $area_div == 'IT SURABAYA' or $area_div == 'GA JAKARTA' or $area_div == 'GA SURABAYA' or $area_div == 'ENG JAKARTA' or $area_div == 'ENG SURABAYA') {
 	$where = "WHERE (WarehouseFrom is not null or WarehouseFrom='')";
-	$where1 = " UserNameApprovalList  LIKE '%" . $_SESSION['nama'] . "%'  ";
+	$where1 = " (UserNameApprovalList  LIKE '%" . $_SESSION['nama'] . "%' OR WarehouseFrom='" . $_SESSION['nama'] . "') ";
 	$filter = "WHERE  (WarehouseFrom is not null or WarehouseFrom='') AND (DocNum LIKE '" . $requestData['search']['value'] . "%' OR DocPriority LIKE '%" . $requestData['search']['value'] . "%') ";
 	$filter1 = "WHERE  (WarehouseFrom is not null or WarehouseFrom='')  " . $jenisprioritas . " " . $jenissistem . " " . $store . " " . $tanggalpengiriman . " " . $statusdokumen . " ";
 	$orderby = "ORDER BY a.ID desc";
@@ -290,7 +290,7 @@ while ($row = sqlsrv_fetch_array($query)) {
 			$approval = '<a title="Verfikasi Dokumen" class="badge badge-danger" href="viewapprovalassets.php?id=' . $row["ID"] . '"><b>Approval</b></a>
 								<br>';
 		} else {
-			$status = '';
+			$status = $row["StatusDoc"];
 			$approval = '';
 		}
 		$action = ' ' . $approval . '
@@ -315,6 +315,9 @@ while ($row = sqlsrv_fetch_array($query)) {
 				}
 				$action = '<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
 			}
+		}else if ($row["StatusDoc"] == 'Cancel'){
+			$status = $row["StatusDoc"];
+			$action = '<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';
 		} else {
 			$status = $row["ApprovalStatus"] . ' (' . $row["ApprovalUserName"] . ') ' . ' - ' . $row["StatusDoc"];
 			$action = '<a data-toggle="tooltip" title="Lihat Dokumen" class="badge badge-warning" href="viewassets.php?id=' . $row["ID"] . '"><b>Lihat Permintaan</b></a>';

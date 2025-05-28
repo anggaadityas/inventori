@@ -110,7 +110,15 @@
       }else if($_SESSION["role_id"] == '12' || $_SESSION["role_id"] == '5'){
       ?>
 
-
+           <li class="nav-item dropdown">
+        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        <b>Formulir Permintaan</b>
+        </a>
+        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+         <a class="nav-link" href="assets.php"><b>Permintaan Asset</b></a>
+          <!-- <a class="nav-link" href="uploadorder.php"><b>Upload Pemesanan Toko</b></a> -->
+        </div>
+      </li>
       <li class="nav-item  <?php if($halaman == "listreturn") echo "active"; ?>">
         <a class="nav-link" href="listreturn.php"><b>Daftar Retur Barang </b></a>
       </li>

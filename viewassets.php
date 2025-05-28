@@ -203,6 +203,30 @@ include "layouts/navbar.php";
                     while ($row = sqlsrv_fetch_array($stmtdetail, SQLSRV_FETCH_ASSOC)) {
                         $prefix = substr($row['ItemCode'], 0, 3); // Ambil 3 karakter pertama dari ItemCode
                         $cats[$prefix][] = $row;
+                        if ($row['ConditionAsset'] == 0) {
+                            $kondisiasset = 'Tidak Bagus';
+                        } else {
+                            $kondisiasset = 'Bagus';
+                        }
+                        if($rowheader['TransName'] == 'Warehouse To Store'){
+                            $status_am='';
+                            $status_distribusi = '';    
+                        }else{
+                                    if ($row['StatusApprovalAM'] == '' || $row['StatusApprovalAM'] == null) {
+                                        $status_am = 'Belum Disetujui';
+                                    }else if($row['StatusApprovalAM'] == 0){
+                                        $status_am = 'Tidak Disetujui';
+                                    } else {
+                                        $status_am = 'Disetujui';
+                                    }
+                                    if ($row['StatusApprovalDistribusi'] == '' || $row['StatusApprovalDistribusi'] == null) {
+                                        $status_distribusi = 'Belum Disetujui';
+                                    }else if($row['StatusApprovalDistribusi'] == 0){
+                                        $status_am = 'Tidak Disetujui';
+                                    } else {
+                                        $status_distribusi = 'Disetujui';
+                                    }
+                        }
                     }
                     ?>
 
@@ -239,7 +263,7 @@ include "layouts/navbar.php";
                             <thead>
                                 <tr>
                                     <th>Kode Barang</th>
-                                    <th>Nama Barang</th>
+                                    <th>Nama Barang</th>    
                                     <th>Satuan</th>
                                     <th>Alasan</th>
                                     <th>Kondisi Asset</th>
@@ -248,7 +272,7 @@ include "layouts/navbar.php";
                                     <th>Warehouse Tujuan</th>
                                     <th>Keterangan Barang</th>
                                     <th>Status Approval AM</th>
-                                    <th>Status Approval Distribusi</th>
+                                    <th>Status Approval RM</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -271,7 +295,7 @@ include "layouts/navbar.php";
                                     </td>
                                     <td>
                                         <?php foreach ($values as $item)
-                                            echo $item['ConditionAsset'] . '<br/><hr>'; ?>
+                                            echo $kondisiasset. '<br/><hr>'; ?>
                                     </td>
                                     <td>
                                         <?php foreach ($values as $item)
@@ -291,11 +315,11 @@ include "layouts/navbar.php";
                                     </td>
                                     <td>
                                         <?php foreach ($values as $item)
-                                            echo $item['StatusApprovalAM'] . '<br/><hr>'; ?>
+                                            echo $status_am . '<br/><hr>'; ?>
                                     </td>
                                     <td>
                                         <?php foreach ($values as $item)
-                                            echo $item['StatusApprovalDistribusi'] . '<br/><hr>'; ?>
+                                            echo $status_distribusi . '<br/><hr>'; ?>
                                     </td>
                                 </tr>
                             </tbody>

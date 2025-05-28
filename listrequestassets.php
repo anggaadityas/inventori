@@ -236,9 +236,11 @@ include "layouts/navbar.php";
                         [0, "desc"]
                     ],
                     "createdRow": function (row, data, dataIndex) {
-                        if (data[9] == 'Close') {
+                        if (data[9] == 'Close' || data[9] == 'Cancel' || data[9] == 'Close ()  - Not Received') {
                             $(row).css('background-color', '#FFF');
-                        } else {
+                        }else if(data[9] == 'Reject (AM)  - Cancel' || data[9] == 'Reject (RM)  - Cancel'){
+                            $(row).css('background-color', '#b0a39d'); 
+                        }else {
                             $(row).css('background-color', '#F39B9B');
                         }
                     },
